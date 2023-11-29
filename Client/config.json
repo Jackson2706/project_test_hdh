@@ -1,0 +1,7 @@
+{
+  "folderPath": "/home/jackson/Desktop/2023.1/Operation_System/project_test/Client/data",
+  "port": 50080,
+  "ip": "127.0.0.1",
+  "crcFile": ".crc.json",
+  "subToSync": ["/"]
+}
