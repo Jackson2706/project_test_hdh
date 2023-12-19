@@ -1,7 +1,5 @@
 .vscode
-./Client/data
-./Server/data
-**.o
+Client/data
+Server/data
+*.o
 .vscode/settings.json
-Client/main.o
-Client/crcRoutine.o
