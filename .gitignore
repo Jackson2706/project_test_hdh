@@ -3,3 +3,6 @@ Client/data
 Server/data
 *.o
 .vscode/settings.json
+*.so
+main
+*.json

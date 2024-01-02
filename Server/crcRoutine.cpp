@@ -1,54 +1,42 @@
+#include "crcRoutine.h"
 #include <iostream>
 #include <fstream>
-#include <filesystem>
-#include <nlohmann/json.hpp>
-#include <zlib.h>
-#include <cstdint>
-#include <string>
+#include <sstream>
 
-using namespace std;
-using namespace std::filesystem;
-using json = nlohmann::json;
-
-
-string crcFile = "";
-string folderPath = "";
-
-void crcIter(const string& path);
-void crcOfFile(const string& absFile);
-string crc(const string& fileName);
-
-
-void crcIter(const string& path) {
+CRCRoutine::CRCRoutine() {
+}
+CRCRoutine::~CRCRoutine() {
+    // Destructor logic
+}
+void CRCRoutine::crcIter(const std::string& path) {
     try {
-        for (const auto& entry : recursive_directory_iterator(path)) {
+        for (const auto& entry : fs::recursive_directory_iterator(path)) {
             if (entry.is_regular_file() && entry.path().filename() == crcFile) {
                 try {
-                    remove(entry.path());
+                    fs::remove(entry.path());
                 } catch (...) {
                     // Handle removal error if needed
                 }
             }
         }
 
-        for (const auto& entry : recursive_directory_iterator(path)) {
+        for (const auto& entry : fs::recursive_directory_iterator(path)) {
             if (entry.is_regular_file()) {
                 crcOfFile(entry.path().string());
             }
         }
-    } catch (const filesystem_error& ex) {
+    } catch (const fs::filesystem_error& ex) {
         // Handle filesystem error if needed
-        cerr << "Error: " << ex.what() << endl;
+        std::cerr << "Error: " << ex.what() << std::endl;
     }
 }
 
-void crcOfFile(const string& absFile) {
-    string crcPath = folderPath + "/" + crcFile;
+void CRCRoutine::crcOfFile(const std::string& absFile) {
+    std::string crcPath = folderPath + "/" + crcFile;
     json crcs;
 
     try {
-        
-        ifstream crcFileIn(crcPath);
+        std::ifstream crcFileIn(crcPath);
         crcFileIn >> crcs;
     } catch (...) {
         // Ignore errors for now
@@ -56,37 +44,32 @@ void crcOfFile(const string& absFile) {
 
     crcs[absFile.substr(folderPath.length())] = crc(absFile);
 
-    ofstream crcFileOut(crcPath);
+    std::ofstream crcFileOut(crcPath);
     crcFileOut << crcs;
 }
 
-string crc(const string& fileName) {
-    ifstream file(fileName, ios::binary);
+std::string CRCRoutine::crc(const std::string& fileName) {
+    std::ifstream file(fileName, std::ios::binary);
     if (!file.is_open()) {
         // Handle file opening error if needed
         return "";
     }
 
-    string content((istreambuf_iterator<char>(file)), istreambuf_iterator<char>());
+    std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
     unsigned long crcValue = crc32(0L, Z_NULL, 0);
     crcValue = crc32(crcValue, reinterpret_cast<const Bytef*>(content.data()), content.size());
 
-    stringstream ss;
-    ss << hex << crcValue;
+    std::stringstream ss;
+    ss << std::hex << crcValue;
     return ss.str();
 }
-int main(){
 
-    path scriptPath = filesystem::absolute(filesystem::path(__FILE__));
-    path scriptLocation = scriptPath.parent_path();
-    string script_location = scriptLocation.string();
-    string config_json = script_location + "/config.json";
-    ifstream configFile(config_json, ifstream::in);
+int CRCRoutine::crcRoutine(const std::string config_json) {
+    std::ifstream configFile(config_json);
     if (!configFile.is_open()) {
-        cerr << "Error: Unable to open config file." << endl;
+        std::cerr << "Error: Unable to open config file." << std::endl;
         return 1;
     }
-
     json conf;
     configFile >> conf;
     folderPath = conf.at("folderPath");
