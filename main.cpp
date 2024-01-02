@@ -5,6 +5,8 @@
 #include <fstream>
 #include "Server/crcRoutine.h"
 #include "Server/Server.h"
+#include "Client/crcRoutine.h"
+#include "Client/Client.h"
 
 using namespace boost::asio;
 using namespace std;
@@ -77,6 +79,25 @@ void show_server_config(const std::string config_json){
     }
 }
 
+void show_client_config(const std::string config_json){
+    if (isPathExists(config_json)){
+        ifstream configFile(config_json, ifstream::in);
+        if(!configFile.is_open()){
+            cerr << "Error: Unable to open config file." << endl;
+            return;
+        }
+        json conf;
+        configFile >> conf;
+        cout << "Thong tin tu client config: "<<endl;
+        cout << "folderPath: "<< "\t" <<conf.at("folderPath")<<endl;
+        cout << "port: " << "\t" << conf.at("port") <<endl;
+        cout << "ip: "<< "\t" << conf.at("ip")<<endl;
+        cout << ".crcFile: "<< "\t" << conf.at("crcFile")<<endl;
+        cout << "subToSync: "<< "\t" << conf.at("subToSync")<<endl;
+    } else {
+        cout << "Canh bao: \t Duong dan khong ton tai !" << endl;
+    }
+}
 bool isFolderPath(const std::string& path) {
     return fs::is_directory(path);
 }
@@ -165,7 +186,6 @@ int main(){
                     system("clear");
                     cout << "Sua thong tin cua Server Config" << endl;
                     do{
-                        
                         cout << "folderPath: \t";
                         std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
                         getline(std::cin, folderpath);
@@ -241,15 +261,107 @@ int main(){
 
             } else if (role_choice == CLIENT_ROLE){
                 cout << "Your choice: [2] - Client" << endl;
-                // Nhap dia chi IP cua Server
-                cout << "Nhap dia chi IP cua Server: ";
-                cin >> serverIP;
+                cout << endl;
+                // Show Client config
+                show_client_config(CLIENT_CONFIG);
 
-                // Kiem tra dia chi IP co hop le hay khong
-                if (isIPAddress(serverIP)){
-                    cout << "IP: " << serverIP << endl;
-                } else {
-                    cout << "Dia chi IP khong hop le" << endl;
+                // Client config
+                cout << "Thay doi/Tao moi Client config? [y/N]" << "\t";
+                cin >> continue_choice;
+                if (continue_choice == "y"){
+                    string folderpath;
+                    string crcFile;
+                    string port;
+                    string ip;
+                    string subToSync;
+                    system("clear");
+                    cout << "Sua thong tin cua Client Config" << endl;
+                    do{
+                        cout << "folderPath: \t";
+                        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                        getline(std::cin, folderpath);
+                        if(!folderpath.empty() &&!isFolderPath(folderpath)) continue;
+                        else break;
+                    } while (!folderpath.empty());
+                    do{
+                        cout << "Port: \t";
+                        getline(std::cin, port);
+                        if(!isInteger(port) && !port.empty()) continue;
+                        else break;
+                    }while(!port.empty());
+                    do{
+                        cout << "IP: \t";
+                        getline(std::cin, ip);
+                        if(!isIPAddress(ip) && !ip.empty()) continue;
+                        else break;
+                    }while(!ip.empty());
+                    do{
+                        cout << ".crcFile: \t";
+                        getline(std::cin, crcFile);
+                        if(!isValidPath(crcFile) && !crcFile.empty()) continue;
+                        else break;
+                    } while (!crcFile.empty());
+                    do{
+                        cout << "subToSync: \t";
+                        getline(std::cin, subToSync);
+                        if(!(subToSync == "/" or subToSync == "\\") && !subToSync.empty()) continue;
+                        else break;
+                    } while (!subToSync.empty());
+                    json existingJsonData;
+                    if(openJsonFile(CLIENT_CONFIG,existingJsonData)){
+                        std::ifstream inputFile(CLIENT_CONFIG);
+                        inputFile >> existingJsonData;
+                        inputFile.close();
+                        if(!folderpath.empty()) existingJsonData.at("folderPath") = folderpath;
+                        if(!port.empty()) existingJsonData.at("port") = stoi(port);
+                        if(!ip.empty()) existingJsonData.at("ip") = ip;
+                        if(!crcFile.empty()) existingJsonData.at("crcFile") = crcFile;
+                        if(!subToSync.empty()) existingJsonData.at("subToSync") = subToSync;
+                        std::ofstream outputFile(CLIENT_CONFIG);
+                        outputFile << existingJsonData;
+                        outputFile.close();
+                    } else {
+                        if(!folderpath.empty()) existingJsonData["folderPath"] = folderpath;
+                        else {
+                            cout << "Error: Loi file config...1" << endl;
+                            cout << folderpath << endl;
+                            continue;
+                        }
+                        if(!port.empty()) existingJsonData["port"] = stoi(port);
+                        else {
+                            cout << "Error: Loi file config...2" << endl;
+                            continue;
+                        }
+                        if(!ip.empty()) existingJsonData["ip"] = ip;
+                        else{
+                            cout << "Error: Loi file config...3" << endl;
+                            continue;
+                        }
+                        if(!crcFile.empty()) existingJsonData["crcFile"] = crcFile;
+                        else {
+                            cout << "Error: Loi file config...4" << endl;
+                            continue;
+                        }
+                        if(!subToSync.empty()) existingJsonData["subToSync"] = subToSync;
+                        else {
+                            cout << "Error: Loi file config...5" << endl;
+                            continue;
+                        }
+                        std::ofstream outputFile(CLIENT_CONFIG);
+                        outputFile << existingJsonData;
+                        outputFile.close();
+                    }
+                }
+                 // CRC function running
+                crcRoutine = new CRCRoutine(); 
+                int crc_result = crcRoutine->crcRoutine(CLIENT_CONFIG);
+                delete crcRoutine;
+                // Construct Client
+                try{
+                    Client client(CLIENT_CONFIG);
+                    client.synchronizeData();
+                } catch (const std::exception& e){
+                    std::cerr << e.what() << std::endl;
                 }
             } else {
                 cout << "Lua chon khong dung !" << endl;
