@@ -11,8 +11,8 @@ using namespace std::filesystem;
 using json = nlohmann::json;
 
 
-// string crcFile = "";
-// string folderPath = "";
+string crcFile = "";
+string folderPath = "";
 
 void crcIter(const string& path);
 void crcOfFile(const string& absFile);
