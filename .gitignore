@@ -6,3 +6,5 @@ Server/data
 *.so
 main
 *.json
+Client/test
+Client/test.cpp
