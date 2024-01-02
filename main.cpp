@@ -4,6 +4,7 @@
 #include <boost/asio.hpp>
 #include <fstream>
 #include "Server/crcRoutine.h"
+#include "Server/Server.h"
 
 using namespace boost::asio;
 using namespace std;
@@ -125,6 +126,7 @@ int main(){
     string serverIP;
     fs::path scriptPath;
     CRCRoutine* crcRoutine;
+    MyServer* myServer;
     do{
         choice = menu();
         if (choice == -1) {
@@ -219,9 +221,22 @@ int main(){
                  // CRC function running
                 crcRoutine = new CRCRoutine(); 
                 int crc_result = crcRoutine->crcRoutine(SERVER_CONFIG);
-                
                 delete crcRoutine;
 
+                // Contruct server
+                json conf;
+                std::ifstream inputFile(SERVER_CONFIG);
+                inputFile >> conf;
+                inputFile.close();
+                string folderPath = conf.at("folderPath");
+                string crcFile = conf.at("crcFile");
+                int port = conf.at("port");
+                try{
+                    MyServer server(folderPath, crcFile);
+                    server.run_server(port);
+                } catch (const std::exception& e){
+                    std::cerr << e.what() << std::endl;
+                }
 
 
             } else if (role_choice == CLIENT_ROLE){
