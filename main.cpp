@@ -20,6 +20,7 @@ const int CLIENT_ROLE = 2;
 const string WORKSAPCE = "./";
 const string SERVER_CONFIG = WORKSAPCE + "server_config.json";
 const string CLIENT_CONFIG = WORKSAPCE + "client_config.json";
+const string SYNC_CONFIG = WORKSAPCE + "sync_config.json";
 
 
 // flag signal
@@ -27,13 +28,6 @@ volatile bool crcSignal = false;
 volatile bool clientSignal = false;
 volatile bool shouldTerminate = false;
 volatile bool serverOffline = false;
-
-void reset_init(){
-    crcSignal = false;
-    clientSignal = false;
-    shouldTerminate = false;
-    serverOffline = false;
-}
 // args for crc Thread/ client call thread
 struct ThreadArgs {
     string config;
@@ -128,6 +122,26 @@ void show_client_config(const std::string config_json){
         cout << "Canh bao: \t Duong dan khong ton tai !" << endl;
     }
 }
+
+void show_sync_config(const std::string config_json){
+    if (isPathExists(config_json)){
+        ifstream configFile(config_json, ifstream::in);
+        if (!configFile.is_open()) {
+            cerr << "Error: Unable to open config file." << endl;
+            return;
+        }
+        json conf;
+        configFile >> conf;
+        cout << "folderPath: "<< "\t" <<conf.at("folderPath")<<endl;
+        cout << "port: " << "\t" << conf.at("port") <<endl;
+        cout << "ip: "<< "\t" << conf.at("ip")<<endl;
+        cout << ".crcFile: "<< "\t" << conf.at("crcFile")<<endl;
+        cout << "subToSync: "<< "\t" << conf.at("subToSync")<<endl;
+    } else {
+        cout << "Canh bao: \t Duong dan khong ton tai !" << endl;
+    }
+}
+
 bool isFolderPath(const std::string& path) {
     return fs::is_directory(path);
 }
@@ -217,12 +231,14 @@ void* clientCallFunction(void* arg){
 void* serverHostFunction(void *arg){
     ServerThreadArgs* args = static_cast<ServerThreadArgs*>(arg);
     while(!shouldTerminate){
-        try{
-            MyServer server(args->folderPath, args->crcFile);
-            server.run_server(args->port);
-        } catch (const std::exception& e){
-            std::cerr << e.what() << std::endl;
+        if(!serverOffline){
+            try{
+                MyServer server(args->folderPath, args->crcFile);
+                server.run_server(args->port);
+            } catch (const std::exception& e){
+                std::cerr << e.what() << std::endl;
             }
+        }
     }
     std::cout << "Server host thread terminating..." << std::endl;
     pthread_exit(NULL);
@@ -329,6 +345,7 @@ int main(){
                         outputFile.close();
                     }
                 }
+
                 
                 ThreadArgs* args = new ThreadArgs;
                 args->config = SERVER_CONFIG;
@@ -358,7 +375,7 @@ int main(){
 
                 pthread_detach(crcThread);
                 pthread_detach(serverHostThread);
-                std::cout << "Server Starts - 0.0.0.0:" << port << std::endl;
+
                 while (true){
                     char userInput;
                     sleep(1);
@@ -369,12 +386,10 @@ int main(){
                         pthread_kill(crcThread, SIGUSR1);
                     }
                     if (userInput == 'Q'){
-                        cout << "Server dang tat trong 3s toi..." << endl;
                         serverOffline = true;
                         shouldTerminate = true;
-                        sleep(3);
+                        sleep(1);
                         cout << "Phien lam viec ket thuc" << endl;
-
                         break;
                     }
                 }
@@ -523,16 +538,101 @@ int main(){
 
         /// TODO: Process if choice == 2 ( xu ly 2 chieu)
         if (choice == 2){
-
-        }
-
-        reset_init();
-        cout << "Ban muon tiep tuc? [y/N]? ";
-        cin >> continue_choice;
-        if (continue_choice == "y") {
             system("clear");
-            continue;
-        } else is_continue = false; 
+            cout << "Che do : Cap nhat du lieu 2 chieu " << endl;
+            cout << endl;
+            printIPAddress();
+
+            cout << endl;
+            show_sync_config(SYNC_CONFIG);
+            cout << "Ban muon tiep tuc? [y/N]? ";
+            cin >> continue_choice;
+            if (continue_choice == "y") {
+                string folderpath;
+                string crcFile;
+                string port;
+                string ip;
+                string subToSync;
+                system("clear");
+                cout << "Sua thong tin cua Sync Config" << endl;
+                do{
+                    cout << "folderPath: \t";
+                    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                    getline(std::cin, folderpath);
+                    if(!folderpath.empty() &&!isFolderPath(folderpath)) continue;
+                    else break;
+                } while (!folderpath.empty());
+                do{
+                    cout << "Port: \t";
+                    getline(std::cin, port);
+                    if(!isInteger(port) && !port.empty()) continue;
+                    else break;
+                }while(!port.empty());
+                do{
+                    cout << "IP: \t";
+                    getline(std::cin,ip);
+                    if(!isIPAddress(ip) && !ip.empty()) continue;
+                    else break;
+                }while(!ip.empty());
+                do{
+                    cout << ".crcFile: \t";
+                    getline(std::cin, crcFile);
+                    if(!isValidPath(crcFile) && !crcFile.empty()) continue;
+                    else break;
+                } while (!crcFile.empty());
+                do{
+                    cout << "subToSync: \t";
+                    getline(std::cin, subToSync);
+                    if(!(subToSync == "/" or subToSync == "\\") && !subToSync.empty()) continue;
+                    else break;
+                } while (!subToSync.empty());
+                json existingJsonData;
+                if(openJsonFile(SYNC_CONFIG,existingJsonData)){
+                    std::ifstream inputFile(SYNC_CONFIG);
+                    inputFile >> existingJsonData;
+                    inputFile.close();
+                    if(!folderpath.empty()) existingJsonData.at("folderPath") = folderpath;
+                    if(!port.empty()) existingJsonData.at("port") = stoi(port);
+                    if(!ip.empty()) existingJsonData.at("ip") = ip;
+                    if(!crcFile.empty()) existingJsonData.at("crcFile") = crcFile;
+                    if(!subToSync.empty()) existingJsonData.at("subToSync") = subToSync;
+                    std::ofstream outputFile(SYNC_CONFIG);
+                    outputFile << existingJsonData;
+                    outputFile.close();
+                } else{
+                    if(!folderpath.empty()) existingJsonData["folderPath"] = folderpath;
+                    else {
+                        cout << "Error: Loi file config...1" << endl;
+                        cout << folderpath << endl;
+                        continue;
+                    }
+                    if(!port.empty()) existingJsonData["port"] = stoi(port);
+                    else {
+                        cout << "Error: Loi file config...2" << endl;
+                        continue;
+                    }
+                    if(!ip.empty()) existingJsonData["ip"] = ip;
+                    else{
+                        cout << "Error: Loi file config...3" << endl;
+                        continue;
+                    }
+                    if(!crcFile.empty()) existingJsonData["crcFile"] = crcFile;
+                    else {
+                        cout << "Error: Loi file config...4" << endl;
+                        continue;
+                    }
+                    if(!subToSync.empty()) existingJsonData["subToSync"] = subToSync;
+                    else {
+                        cout << "Error: Loi file config...5" << endl;
+                        continue;
+                    }
+                    std::ofstream outputFile(SYNC_CONFIG);
+                    outputFile << existingJsonData;
+                    outputFile.close();
+                }
+            } else is_continue = false; 
+        }
+        
 
     }while(is_continue);
     return 0;
