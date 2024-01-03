@@ -3,6 +3,10 @@
 #include <cstdlib>
 #include <boost/asio.hpp>
 #include <fstream>
+#include <pthread.h>
+#include <csignal>
+
+
 #include "Server/crcRoutine.h"
 #include "Server/Server.h"
 #include "Client/crcRoutine.h"
@@ -16,6 +20,18 @@ const int CLIENT_ROLE = 2;
 const string WORKSAPCE = "./";
 const string SERVER_CONFIG = WORKSAPCE + "server_config.json";
 const string CLIENT_CONFIG = WORKSAPCE + "client_config.json";
+
+
+// flag signal
+volatile bool crcSignal = false;
+volatile bool clientSignal = false;
+volatile bool shouldTerminate = false;
+
+// args for crc Thread
+struct ThreadArgs {
+    string config;
+};
+
 int menu(){
     int choice = -1;
     cout << "Cac lua chon: "<< endl;
@@ -139,14 +155,61 @@ bool openJsonFile(const std::string& filename, json& jsonData) {
     return true;
 }
 
+
+// Signal handler function
+void handleSignal(int signo) {
+    if (signo == SIGUSR1) {
+        crcSignal = true;
+    } else if (signo == SIGUSR2){
+        clientSignal = true;
+    }
+}
+
+
+void* crcRoutineFunction(void* arg){
+    ThreadArgs* args = static_cast<ThreadArgs*>(arg);
+    while (!shouldTerminate){
+
+        if(crcSignal){
+            cout << "CrcRoutine running...." << endl;
+            CRCRoutine* crcRoutine = new CRCRoutine(); 
+            int crc_result = crcRoutine->crcRoutine(args->config);
+            delete crcRoutine;
+            crcSignal = false;
+        }
+    }
+    std::cout << "crcThread terminating..." << std::endl;
+    pthread_exit(NULL);
+}
+
+void* clientCallFunction(void* arg){
+    ThreadArgs* args = static_cast<ThreadArgs*>(arg);
+    while(!shouldTerminate){
+        if(clientSignal){
+            cout << "Dong bo du lieu: ";
+            try{
+                Client client(args->config);
+                client.synchronizeData();
+            } catch(const std::exception& e){
+                std::cerr << e.what() << std::endl;
+            }
+            clientSignal = false;
+        }
+    }
+    std::cout << "client call thread terminating..." << std::endl;
+    pthread_exit(NULL);
+}
 int main(){
+
+    // Register the signal handler
+    signal(SIGUSR1, handleSignal);
+    signal(SIGUSR2, handleSignal);
     bool is_continue = true;
     int choice;
     int role_choice;
     string continue_choice;
     string serverIP;
     fs::path scriptPath;
-    CRCRoutine* crcRoutine;
     MyServer* myServer;
     do{
         choice = menu();
@@ -239,9 +302,9 @@ int main(){
                     }
                 }
                  // CRC function running
-                crcRoutine = new CRCRoutine(); 
-                int crc_result = crcRoutine->crcRoutine(SERVER_CONFIG);
-                delete crcRoutine;
+                // crcRoutine = new CRCRoutine(); 
+                // int crc_result = crcRoutine->crcRoutine(SERVER_CONFIG);
+                // delete crcRoutine;
 
                 // Contruct server
                 json conf;
@@ -353,15 +416,45 @@ int main(){
                     }
                 }
                  // CRC function running
-                crcRoutine = new CRCRoutine(); 
-                int crc_result = crcRoutine->crcRoutine(CLIENT_CONFIG);
-                delete crcRoutine;
-                // Construct Client
-                try{
-                    Client client(CLIENT_CONFIG);
-                    client.synchronizeData();
-                } catch (const std::exception& e){
-                    std::cerr << e.what() << std::endl;
+                // crcRoutine = new CRCRoutine(); 
+                // int crc_result = crcRoutine->crcRoutine(CLIENT_CONFIG);
+                // delete crcRoutine;
+
+                ThreadArgs* args = new ThreadArgs;
+                args->config = CLIENT_CONFIG;
+                pthread_t crcThread;
+                pthread_t clientCallThread;
+                // Tạo thread
+                if (pthread_create(&crcThread, NULL, crcRoutineFunction, args) != 0) {
+                    std::cerr << "Failed to create crcThread" << std::endl;
+                }
+
+                if(pthread_create(&clientCallThread, NULL, clientCallFunction, args) != 0){
+                    std::cerr << "Failed to create client call thread" << std::endl;
+                }
+
+                pthread_detach(crcThread);
+                pthread_detach(clientCallThread);
+
+                while (true) {
+                    char userInput;
+                    sleep(1);
+                    cout << "Nhap yeu cau: \t";
+                    cin >> userInput;
+
+                    if (userInput == 'U') {
+                        // Send signal to crcThread
+                        pthread_kill(crcThread, SIGUSR1);
+                    }
+
+                    if (userInput == 'S') {
+                        pthread_kill(clientCallThread, SIGUSR2);
+                    }
+                    if(userInput == 'Q') {
+                        shouldTerminate = true;
+                        cout << "Phien lam viec ket thuc" << endl;
+                        break;
+                    }
                 }
             } else {
                 cout << "Lua chon khong dung !" << endl;
