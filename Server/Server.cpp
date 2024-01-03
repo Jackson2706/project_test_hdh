@@ -139,6 +139,16 @@ void MyServer::run_server(int port) {
         handle_request(req, res);
     });
 
-    std::cout << "Server Starts - 0.0.0.0:" << port << std::endl;
-    server.listen("0.0.0.0", port);
+    
+    // Start server in a separate thread
+    std::thread server_thread([this, port]() {
+        server.listen("0.0.0.0", port);
+    });
+
+    // Sleep for the specified duration
+    std::this_thread::sleep_for(std::chrono::seconds(2));
+
+    // Stop the server
+    server.stop();
+    server_thread.join();  // Wait for the server thread to finish
 }

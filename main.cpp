@@ -27,6 +27,13 @@ volatile bool crcSignal = false;
 volatile bool clientSignal = false;
 volatile bool shouldTerminate = false;
 volatile bool serverOffline = false;
+
+void reset_init(){
+    crcSignal = false;
+    clientSignal = false;
+    shouldTerminate = false;
+    serverOffline = false;
+}
 // args for crc Thread/ client call thread
 struct ThreadArgs {
     string config;
@@ -210,14 +217,12 @@ void* clientCallFunction(void* arg){
 void* serverHostFunction(void *arg){
     ServerThreadArgs* args = static_cast<ServerThreadArgs*>(arg);
     while(!shouldTerminate){
-        if(!serverOffline){
-            try{
-                MyServer server(args->folderPath, args->crcFile);
-                server.run_server(args->port);
-            } catch (const std::exception& e){
-                std::cerr << e.what() << std::endl;
+        try{
+            MyServer server(args->folderPath, args->crcFile);
+            server.run_server(args->port);
+        } catch (const std::exception& e){
+            std::cerr << e.what() << std::endl;
             }
-        }
     }
     std::cout << "Server host thread terminating..." << std::endl;
     pthread_exit(NULL);
@@ -353,7 +358,7 @@ int main(){
 
                 pthread_detach(crcThread);
                 pthread_detach(serverHostThread);
-
+                std::cout << "Server Starts - 0.0.0.0:" << port << std::endl;
                 while (true){
                     char userInput;
                     sleep(1);
@@ -364,10 +369,12 @@ int main(){
                         pthread_kill(crcThread, SIGUSR1);
                     }
                     if (userInput == 'Q'){
+                        cout << "Server dang tat trong 3s toi..." << endl;
                         serverOffline = true;
                         shouldTerminate = true;
-                        sleep(1);
+                        sleep(3);
                         cout << "Phien lam viec ket thuc" << endl;
+
                         break;
                     }
                 }
@@ -519,7 +526,7 @@ int main(){
 
         }
 
-
+        reset_init();
         cout << "Ban muon tiep tuc? [y/N]? ";
         cin >> continue_choice;
         if (continue_choice == "y") {
