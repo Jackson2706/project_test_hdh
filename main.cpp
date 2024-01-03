@@ -37,7 +37,7 @@ struct ServerThreadArgs{
     string folderPath;
     string crcFile;
     int port;
-}
+};
 
 int menu(){
     int choice = -1;
@@ -213,12 +213,14 @@ void* serverHostFunction(void *arg){
         if(!serverOffline){
             try{
                 MyServer server(args->folderPath, args->crcFile);
-                server.run(args->port);
+                server.run_server(args->port);
             } catch (const std::exception& e){
-                std::cerr << e.what() << std::end;
+                std::cerr << e.what() << std::endl;
             }
         }
     }
+    std::cout << "Server host thread terminating..." << std::endl;
+    pthread_exit(NULL);
 }
 int main(){
 
@@ -342,7 +344,33 @@ int main(){
                 server_args->folderPath = folderPath;
                 server_args->crcFile = crcFile;
                 server_args->port = port;
-                // TODO: create multithread in Server phase
+                
+                pthread_t serverHostThread;
+
+                if(pthread_create(&serverHostThread, NULL, serverHostFunction, server_args)!=0){
+                    std::cerr << "Failed to create server host thread" << std::endl;
+                }
+
+                pthread_detach(crcThread);
+                pthread_detach(serverHostThread);
+
+                while (true){
+                    char userInput;
+                    sleep(1);
+                    cout << "Nhap yeu cau: \t";
+                    cin >> userInput;
+
+                    if (userInput == 'U'){
+                        pthread_kill(crcThread, SIGUSR1);
+                    }
+                    if (userInput == 'Q'){
+                        serverOffline = true;
+                        shouldTerminate = true;
+                        sleep(1);
+                        cout << "Phien lam viec ket thuc" << endl;
+                        break;
+                    }
+                }
 
 
             } else if (role_choice == CLIENT_ROLE){
@@ -471,6 +499,7 @@ int main(){
                     }
                     if(userInput == 'Q') {
                         shouldTerminate = true;
+                        sleep(1);
                         cout << "Phien lam viec ket thuc" << endl;
                         break;
                     }
