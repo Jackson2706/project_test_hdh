@@ -26,11 +26,18 @@ const string CLIENT_CONFIG = WORKSAPCE + "client_config.json";
 volatile bool crcSignal = false;
 volatile bool clientSignal = false;
 volatile bool shouldTerminate = false;
-
-// args for crc Thread
+volatile bool serverOffline = false;
+// args for crc Thread/ client call thread
 struct ThreadArgs {
     string config;
 };
+
+// args for server host thread
+struct ServerThreadArgs{
+    string folderPath;
+    string crcFile;
+    int port;
+}
 
 int menu(){
     int choice = -1;
@@ -199,6 +206,20 @@ void* clientCallFunction(void* arg){
     std::cout << "client call thread terminating..." << std::endl;
     pthread_exit(NULL);
 }
+
+void* serverHostFunction(void *arg){
+    ServerThreadArgs* args = static_cast<ServerThreadArgs*>(arg);
+    while(!shouldTerminate){
+        if(!serverOffline){
+            try{
+                MyServer server(args->folderPath, args->crcFile);
+                server.run(args->port);
+            } catch (const std::exception& e){
+                std::cerr << e.what() << std::end;
+            }
+        }
+    }
+}
 int main(){
 
     // Register the signal handler
@@ -301,11 +322,14 @@ int main(){
                         outputFile.close();
                     }
                 }
-                 // CRC function running
-                // crcRoutine = new CRCRoutine(); 
-                // int crc_result = crcRoutine->crcRoutine(SERVER_CONFIG);
-                // delete crcRoutine;
-
+                
+                ThreadArgs* args = new ThreadArgs;
+                args->config = SERVER_CONFIG;
+                pthread_t crcThread;
+                // Tao crc thread
+                if(pthread_create(&crcThread, NULL, crcRoutineFunction, args) != 0){
+                    std::cerr <<"Failed to create crcThread" << std::endl;
+                }
                 // Contruct server
                 json conf;
                 std::ifstream inputFile(SERVER_CONFIG);
@@ -314,12 +338,11 @@ int main(){
                 string folderPath = conf.at("folderPath");
                 string crcFile = conf.at("crcFile");
                 int port = conf.at("port");
-                try{
-                    MyServer server(folderPath, crcFile);
-                    server.run_server(port);
-                } catch (const std::exception& e){
-                    std::cerr << e.what() << std::endl;
-                }
+                ServerThreadArgs* server_args = new ServerThreadArgs;
+                server_args->folderPath = folderPath;
+                server_args->crcFile = crcFile;
+                server_args->port = port;
+                // TODO: create multithread in Server phase
 
 
             } else if (role_choice == CLIENT_ROLE){
@@ -415,10 +438,6 @@ int main(){
                         outputFile.close();
                     }
                 }
-                 // CRC function running
-                // crcRoutine = new CRCRoutine(); 
-                // int crc_result = crcRoutine->crcRoutine(CLIENT_CONFIG);
-                // delete crcRoutine;
 
                 ThreadArgs* args = new ThreadArgs;
                 args->config = CLIENT_CONFIG;
