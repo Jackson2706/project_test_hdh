@@ -124,9 +124,9 @@ void show_server_config(const std::string config_json){
         json conf;
         configFile >> conf;
         cout << "Thong tin tu server config: "<<endl;
-        cout << "folderPath: "<< "\t" <<conf.at("folderPath")<<endl;
-        cout << "port: " << "\t" << conf.at("port") <<endl;
-        cout << ".crcFile: "<< "\t" << conf.at("crcFile")<<endl;
+        cout << "\tfolderPath: "<< "\t" <<conf.at("folderPath")<<endl;
+        cout << "\tport:       " << "\t" << conf.at("port") <<endl;
+        cout << "\t.crcFile:   "<< "\t" << conf.at("crcFile")<<endl;
     } else {
         cout << "Canh bao: \t Duong dan khong ton tai !" << endl;
     }
@@ -142,11 +142,11 @@ void show_client_config(const std::string config_json){
         json conf;
         configFile >> conf;
         cout << "Thong tin tu client config: "<<endl;
-        cout << "folderPath: "<< "\t" <<conf.at("folderPath")<<endl;
-        cout << "port: " << "\t" << conf.at("port") <<endl;
-        cout << "ip: "<< "\t" << conf.at("ip")<<endl;
-        cout << ".crcFile: "<< "\t" << conf.at("crcFile")<<endl;
-        cout << "subToSync: "<< "\t" << conf.at("subToSync")<<endl;
+        cout << "\tfolderPath: "<< "\t" <<conf.at("folderPath")<<endl;
+        cout << "\tport:       " << "\t" << conf.at("port") <<endl;
+        cout << "\tip:         "<< "\t" << conf.at("ip")<<endl;
+        cout << "\t.crcFile:   "<< "\t" << conf.at("crcFile")<<endl;
+        cout << "\tsubToSync:  "<< "\t" << conf.at("subToSync")<<endl;
     } else {
         cout << "Canh bao: \t Duong dan khong ton tai !" << endl;
     }
@@ -161,12 +161,13 @@ void show_sync_config(const std::string config_json){
         }
         json conf;
         configFile >> conf;
-        cout << "folderPath: "<< "\t" <<conf.at("folderPath")<<endl;
-        cout << "port for calling: " << "\t" << conf.at("port") <<endl;
-        cout << "port for hosting: " << "\t" << conf.at("port_host") <<endl;
-        cout << "ip: "<< "\t" << conf.at("ip")<<endl;
-        cout << ".crcFile: "<< "\t" << conf.at("crcFile")<<endl;
-        cout << "subToSync: "<< "\t" << conf.at("subToSync")<<endl;
+        cout << "Thong tin tu client config: "<<endl;
+        cout << "\tfolderPath:       "<< "\t" <<conf.at("folderPath")<<endl;
+        cout << "\tport for calling: " << "\t" << conf.at("port") <<endl;
+        cout << "\tport for hosting: " << "\t" << conf.at("port_host") <<endl;
+        cout << "\tip:               "<< "\t" << conf.at("ip")<<endl;
+        cout << "\t.crcFile:         "<< "\t" << conf.at("crcFile")<<endl;
+        cout << "\tsubToSync:        "<< "\t" << conf.at("subToSync")<<endl;
     } else {
         cout << "Canh bao: \t Duong dan khong ton tai !" << endl;
     }
