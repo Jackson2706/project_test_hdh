@@ -59,10 +59,18 @@ int menu(){
     return choice;
 }
 
-time_t getTimeNow(){
-    auto current_time = std::chrono::system_clock::now();
-    time_t time = std::chrono::system_clock::to_time_t(current_time);
-    return time;
+string getCurrentTime() {
+    // Get the current time
+    auto currentTime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+
+    // Convert to local time
+    std::tm* timeInfo = std::localtime(&currentTime);
+
+    // Format the time as a string
+    std::stringstream ss;
+    ss << std::put_time(timeInfo, "%Y-%m-%d %H:%M:%S");
+    
+    return "[ " + ss.str() +" ]:\t";
 }
 
 void printIPAddress() {
@@ -211,8 +219,7 @@ void* crcRoutineFunction(void* arg){
     while (!shouldTerminate){
 
         if(crcSignal){
-            time_t timeNow = getTimeNow();
-            cout <<"[ " << std::put_time(std::localtime(&timeNow), "%c") << " ]" << "CrcRoutine running...." << endl;
+            cout << getCurrentTime() << "CrcRoutine running...." << endl;
             CRCRoutine* crcRoutine = new CRCRoutine(); 
             int crc_result = crcRoutine->crcRoutine(args->config);
             delete crcRoutine;
