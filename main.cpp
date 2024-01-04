@@ -236,7 +236,7 @@ void* crcRoutineFunction(void* arg){
             crcSignal = false;
         }
     }
-    std::cout << "crcThread terminating..." << std::endl;
+    std::cout << getCurrentTime() << "crcThread terminating..." << std::endl;
     pthread_exit(NULL);
 }
 
@@ -254,7 +254,7 @@ void* clientCallFunction(void* arg){
             clientSignal = false;
         }
     }
-    std::cout << "client call thread terminating..." << std::endl;
+    std::cout << getCurrentTime() << "client call thread terminating..." << std::endl;
     pthread_exit(NULL);
 }
 
@@ -274,7 +274,7 @@ void* serverHostFunction(void *arg){
     pthread_exit(NULL);
 }
 int main(){
-
+    system("clear");
     // Register the signal handler
     signal(SIGUSR1, handleSignal);
     signal(SIGUSR2, handleSignal);
