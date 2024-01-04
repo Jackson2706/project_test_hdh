@@ -17,10 +17,14 @@ using namespace std;
 
 const int SERVER_ROLE = 1;
 const int CLIENT_ROLE = 2;
-const string WORKSAPCE = "./";
-const string SERVER_CONFIG = WORKSAPCE + "server_config.json";
-const string CLIENT_CONFIG = WORKSAPCE + "client_config.json";
+const string WORKSPACE = "./";
 
+// config path for mode 1
+const string SERVER_CONFIG = WORKSPACE + "server_config.json";
+const string CLIENT_CONFIG = WORKSPACE + "client_config.json";
+
+// config path for mode 2
+const string CONFIG = WORKSPACE + "config.json";
 
 // flag signal
 volatile bool crcSignal = false;
