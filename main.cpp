@@ -234,7 +234,7 @@ void* clientCallFunction(void* arg){
     ThreadArgs* args = static_cast<ThreadArgs*>(arg);
     while(!shouldTerminate){
         if(clientSignal){
-            cout << "Dong bo du lieu: ";
+            cout << getCurrentTime() << "Dong bo du lieu: ";
             try{
                 Client client(args->config);
                 client.synchronizeData();
@@ -260,7 +260,7 @@ void* serverHostFunction(void *arg){
             }
         }
     }
-    std::cout << "Server host thread terminating..." << std::endl;
+    std::cout << getCurrentTime() << "Server host thread terminating..." << std::endl;
     pthread_exit(NULL);
 }
 int main(){
@@ -409,7 +409,7 @@ int main(){
                         serverOffline = true;
                         shouldTerminate = true;
                         sleep(1);
-                        cout << "Phien lam viec ket thuc" << endl;
+                        cout << getCurrentTime()<<"Phien lam viec ket thuc" << endl;
                         break;
                     }
                 }
@@ -543,7 +543,7 @@ int main(){
                     if(userInput == 'Q') {
                         shouldTerminate = true;
                         sleep(1);
-                        cout << "Phien lam viec ket thuc" << endl;
+                        cout << getCurrentTime() << "Phien lam viec ket thuc" << endl;
                         break;
                     }
                 }
@@ -552,9 +552,6 @@ int main(){
                 cout << "Lua chon khong dung !" << endl;
 
             }
-
-            
-            
         }
 
 
@@ -702,7 +699,7 @@ int main(){
                 if(userInput == 'Q') {
                     shouldTerminate = true;
                     sleep(1);
-                    cout << "Phien lam viec ket thuc" << endl;
+                    cout << getCurrentTime() << "Phien lam viec ket thuc" << endl;
                     break;
                 }
             }
