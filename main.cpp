@@ -35,6 +35,15 @@ volatile bool crcSignal = false;
 volatile bool clientSignal = false;
 volatile bool shouldTerminate = false;
 volatile bool serverOffline = false;
+
+// reset init
+void reset(){
+    crcSignal = false;
+    clientSignal = false;
+    shouldTerminate = false;
+    serverOffline = false;
+}
+
 // args for crc Thread/ client call thread
 struct ThreadArgs {
     string config;
@@ -116,8 +125,7 @@ void show_server_config(const std::string config_json){
         configFile >> conf;
         cout << "Thong tin tu server config: "<<endl;
         cout << "folderPath: "<< "\t" <<conf.at("folderPath")<<endl;
-        cout << "port for calling: " << "\t" << conf.at("port") <<endl;
-        cout << "port for hosting: " << "\t" << conf.at("port_host") <<endl;
+        cout << "port: " << "\t" << conf.at("port") <<endl;
         cout << ".crcFile: "<< "\t" << conf.at("crcFile")<<endl;
     } else {
         cout << "Canh bao: \t Duong dan khong ton tai !" << endl;
@@ -154,7 +162,8 @@ void show_sync_config(const std::string config_json){
         json conf;
         configFile >> conf;
         cout << "folderPath: "<< "\t" <<conf.at("folderPath")<<endl;
-        cout << "port: " << "\t" << conf.at("port") <<endl;
+        cout << "port for calling: " << "\t" << conf.at("port") <<endl;
+        cout << "port for hosting: " << "\t" << conf.at("port_host") <<endl;
         cout << "ip: "<< "\t" << conf.at("ip")<<endl;
         cout << ".crcFile: "<< "\t" << conf.at("crcFile")<<endl;
         cout << "subToSync: "<< "\t" << conf.at("subToSync")<<endl;
@@ -286,7 +295,7 @@ int main(){
             continue;
             } else is_continue = false; 
         }
-        if (choice == 3) {
+        if (choice ==3) {
             is_continue = false;
             break;
         }
@@ -409,7 +418,7 @@ int main(){
                     if (userInput == 'Q'){
                         serverOffline = true;
                         shouldTerminate = true;
-                        sleep(1);
+                        sleep(3);
                         cout << "Phien lam viec ket thuc" << endl;
                         break;
                     }
@@ -715,13 +724,15 @@ int main(){
                 }
                 if(userInput == 'Q') {
                     shouldTerminate = true;
-                    sleep(1);
+                    sleep(3);
                     cout << "Phien lam viec ket thuc" << endl;
                     break;
                 }
             }
-        } else is_continue = false; 
-        
+            delete args;
+            delete host_args;
+        } 
+    reset();
     }while(is_continue);
     return 0;
 }

@@ -146,7 +146,7 @@ void MyServer::run_server(int port) {
     });
 
     // Sleep for the specified duration
-    std::this_thread::sleep_for(std::chrono::seconds(2));
+    std::this_thread::sleep_for(std::chrono::seconds(1));
 
     // Stop the server
     server.stop();
