@@ -116,7 +116,8 @@ void show_server_config(const std::string config_json){
         configFile >> conf;
         cout << "Thong tin tu server config: "<<endl;
         cout << "folderPath: "<< "\t" <<conf.at("folderPath")<<endl;
-        cout << "port: " << "\t" << conf.at("port") <<endl;
+        cout << "port for calling: " << "\t" << conf.at("port") <<endl;
+        cout << "port for hosting: " << "\t" << conf.at("port_host") <<endl;
         cout << ".crcFile: "<< "\t" << conf.at("crcFile")<<endl;
     } else {
         cout << "Canh bao: \t Duong dan khong ton tai !" << endl;
@@ -573,6 +574,7 @@ int main(){
                 string folderpath;
                 string crcFile;
                 string port;
+                string port_host;
                 string ip;
                 string subToSync;
                 system("clear");
@@ -585,11 +587,17 @@ int main(){
                     else break;
                 } while (!folderpath.empty());
                 do{
-                    cout << "Port: \t";
+                    cout << "Port for calling: \t";
                     getline(std::cin, port);
                     if(!isInteger(port) && !port.empty()) continue;
                     else break;
                 }while(!port.empty());
+                do{
+                    cout << "Port for hosting: \t";
+                    getline(std::cin, port_host);
+                    if(!isInteger(port_host) && !port_host.empty()) continue;
+                    else break;
+                }while(!port_host.empty());
                 do{
                     cout << "IP: \t";
                     getline(std::cin,ip);
@@ -615,6 +623,7 @@ int main(){
                     inputFile.close();
                     if(!folderpath.empty()) existingJsonData.at("folderPath") = folderpath;
                     if(!port.empty()) existingJsonData.at("port") = stoi(port);
+                    if(!port_host.empty()) existingJsonData.at("port_host") = stoi(port_host);
                     if(!ip.empty()) existingJsonData.at("ip") = ip;
                     if(!crcFile.empty()) existingJsonData.at("crcFile") = crcFile;
                     if(!subToSync.empty()) existingJsonData.at("subToSync") = subToSync;
@@ -631,6 +640,11 @@ int main(){
                     if(!port.empty()) existingJsonData["port"] = stoi(port);
                     else {
                         cout << "Error: Loi file config...2" << endl;
+                        continue;
+                    }
+                    if(!port_host.empty()) existingJsonData["port_host"] = stoi(port_host);
+                    else {
+                        cout << "Error: Loi file config...2.1" << endl;
                         continue;
                     }
                     if(!ip.empty()) existingJsonData["ip"] = ip;
@@ -673,7 +687,7 @@ int main(){
             inputFile.close();
             string folderPath = conf.at("folderPath");
             string crcFile_ = conf.at("crcFile");
-            int port_ = conf.at("port");
+            int port_ = conf.at("port_host");
             ServerThreadArgs *host_args = new ServerThreadArgs;
             host_args->folderPath = folderPath;
             host_args->crcFile = crcFile_;
