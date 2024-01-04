@@ -20,9 +20,7 @@ const int SERVER_ROLE = 1;
 const int CLIENT_ROLE = 2;
 
 const string WORKSPACE = "./";
-const string SERVER_CONFIG = WORKSPACE + "server_config.json";
-const string CLIENT_CONFIG = WORKSPACE + "client_config.json";
-const string SYNC_CONFIG = WORKSPACE + "sync_config.json";
+
 
 
 // config path for mode 1
@@ -30,7 +28,7 @@ const string SERVER_CONFIG = WORKSPACE + "server_config.json";
 const string CLIENT_CONFIG = WORKSPACE + "client_config.json";
 
 // config path for mode 2
-const string CONFIG = WORKSPACE + "config.json";
+const string SYNC_CONFIG = WORKSPACE + "sync_config.json";
 
 // flag signal
 volatile bool crcSignal = false;
