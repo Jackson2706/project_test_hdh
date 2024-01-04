@@ -5,6 +5,7 @@
 #include <fstream>
 #include <pthread.h>
 #include <csignal>
+#include <chrono>
 
 
 #include "Server/crcRoutine.h"
@@ -62,6 +63,11 @@ int menu(){
     return choice;
 }
 
+time_t getTimeNow(){
+    auto current_time = std::chrono::system_clock::now();
+    time_t time = std::chrono::system_clock::to_time_t(current_time);
+    return time;
+}
 
 void printIPAddress() {
     boost::asio::io_context ioContext;
@@ -189,7 +195,8 @@ void* crcRoutineFunction(void* arg){
     while (!shouldTerminate){
 
         if(crcSignal){
-            cout << "CrcRoutine running...." << endl;
+            time_t timeNow = getTimeNow();
+            cout <<"[ " << std::put_time(std::localtime(&timeNow), "%c") << " ]" << "CrcRoutine running...." << endl;
             CRCRoutine* crcRoutine = new CRCRoutine(); 
             int crc_result = crcRoutine->crcRoutine(args->config);
             delete crcRoutine;
