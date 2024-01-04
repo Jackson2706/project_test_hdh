@@ -413,7 +413,8 @@ int main(){
                         break;
                     }
                 }
-
+                delete args;
+                delete server_args;
 
             } else if (role_choice == CLIENT_ROLE){
                 cout << "Your choice: [2] - Client" << endl;
@@ -546,6 +547,7 @@ int main(){
                         break;
                     }
                 }
+                delete args;
             } else {
                 cout << "Lua chon khong dung !" << endl;
 
@@ -650,10 +652,62 @@ int main(){
                     outputFile << existingJsonData;
                     outputFile.close();
                 }
-            } else is_continue = false; 
-        }
-        
+            }
+            // crc function
+            ThreadArgs* args = new ThreadArgs;
+            args->config = SYNC_CONFIG;
+            pthread_t crcThread;
+            if(pthread_create(&crcThread, NULL, crcRoutineFunction,args)!=0){
+                std::cerr <<"Failed to create crcThread" << std::endl;
+            }
 
+            // call sync 
+            pthread_t callThread;
+            if(pthread_create(&callThread, NULL, clientCallFunction, args) != 0){
+                std::cerr << "Failed to create call thread" << std::endl;
+            }
+            // constructor host
+            json conf;
+            std::ifstream inputFile(SYNC_CONFIG);
+            inputFile >> conf;
+            inputFile.close();
+            string folderPath = conf.at("folderPath");
+            string crcFile_ = conf.at("crcFile");
+            int port_ = conf.at("port");
+            ServerThreadArgs *host_args = new ServerThreadArgs;
+            host_args->folderPath = folderPath;
+            host_args->crcFile = crcFile_;
+            host_args->port = port_;
+            pthread_t hostThread;
+            if (pthread_create(&hostThread, NULL, serverHostFunction, host_args) != 0){
+                std::cerr << "Failed to create host thread" << std::endl;
+            }
+            pthread_detach(callThread);
+            pthread_detach(crcThread);
+            pthread_detach(hostThread);
+            while (true) {
+                char userInput;
+                sleep(1);
+                cout << "Nhap yeu cau: \t";
+                cin >> userInput;
+
+                if (userInput == 'U') {
+                    // Send signal to crcThread
+                    pthread_kill(crcThread, SIGUSR1);
+                }
+
+                if (userInput == 'S') {
+                    pthread_kill(callThread, SIGUSR2);
+                }
+                if(userInput == 'Q') {
+                    shouldTerminate = true;
+                    sleep(1);
+                    cout << "Phien lam viec ket thuc" << endl;
+                    break;
+                }
+            }
+        } else is_continue = false; 
+        
     }while(is_continue);
     return 0;
 }
