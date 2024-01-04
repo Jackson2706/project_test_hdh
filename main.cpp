@@ -5,6 +5,7 @@
 #include <fstream>
 #include <pthread.h>
 #include <csignal>
+#include <chrono>
 
 
 #include "Server/crcRoutine.h"
@@ -17,11 +18,19 @@ using namespace std;
 
 const int SERVER_ROLE = 1;
 const int CLIENT_ROLE = 2;
-const string WORKSAPCE = "./";
-const string SERVER_CONFIG = WORKSAPCE + "server_config.json";
-const string CLIENT_CONFIG = WORKSAPCE + "client_config.json";
-const string SYNC_CONFIG = WORKSAPCE + "sync_config.json";
 
+const string WORKSPACE = "./";
+const string SERVER_CONFIG = WORKSPACE + "server_config.json";
+const string CLIENT_CONFIG = WORKSPACE + "client_config.json";
+const string SYNC_CONFIG = WORKSPACE + "sync_config.json";
+
+
+// config path for mode 1
+const string SERVER_CONFIG = WORKSPACE + "server_config.json";
+const string CLIENT_CONFIG = WORKSPACE + "client_config.json";
+
+// config path for mode 2
+const string CONFIG = WORKSPACE + "config.json";
 
 // flag signal
 volatile bool crcSignal = false;
@@ -52,6 +61,11 @@ int menu(){
     return choice;
 }
 
+time_t getTimeNow(){
+    auto current_time = std::chrono::system_clock::now();
+    time_t time = std::chrono::system_clock::to_time_t(current_time);
+    return time;
+}
 
 void printIPAddress() {
     boost::asio::io_context ioContext;
@@ -199,7 +213,8 @@ void* crcRoutineFunction(void* arg){
     while (!shouldTerminate){
 
         if(crcSignal){
-            cout << "CrcRoutine running...." << endl;
+            time_t timeNow = getTimeNow();
+            cout <<"[ " << std::put_time(std::localtime(&timeNow), "%c") << " ]" << "CrcRoutine running...." << endl;
             CRCRoutine* crcRoutine = new CRCRoutine(); 
             int crc_result = crcRoutine->crcRoutine(args->config);
             delete crcRoutine;
