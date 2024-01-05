@@ -6,7 +6,7 @@
 #include <pthread.h>
 #include <csignal>
 #include <chrono>
-
+#include "argparse/argparse.hpp"
 
 #include "Server/crcRoutine.h"
 #include "Server/Server.h"
@@ -55,18 +55,6 @@ struct ServerThreadArgs{
     string crcFile;
     int port;
 };
-
-int menu(){
-    int choice = -1;
-    cout << "Cac lua chon: "<< endl;
-    cout << "1. Cap nhat du lieu theo 1 chieu" << endl;
-    cout << "2. Cap nhat du lieu theo 2 chieu" << endl;
-    cout << "3. Ket thuc" << endl;
-    cout << "Lua chon cua ban: ";
-    cin >> choice;
-    if (choice < 1 or choice >3) choice = -1;
-    return choice;
-}
 
 string getCurrentTime() {
     // Get the current time
@@ -274,463 +262,436 @@ void* serverHostFunction(void *arg){
     std::cout << getCurrentTime() << "Server host thread terminating..." << std::endl;
     pthread_exit(NULL);
 }
-int main(){
-    system("clear");
+int main(int argc, char *argv[]) {
     // Register the signal handler
     signal(SIGUSR1, handleSignal);
     signal(SIGUSR2, handleSignal);
     bool is_continue = true;
-    int choice;
-    int role_choice;
     string continue_choice;
     string serverIP;
     fs::path scriptPath;
     MyServer* myServer;
-    do{
-        choice = menu();
-        if (choice == -1) {
-            cout << "Lua chon khong dung. Ban muon tiep tuc [y/N]? ";
-            cin >> continue_choice;
-            if (continue_choice == "y") {
-            system("clear");
-            continue;
-            } else is_continue = false; 
+    int role_choice;
+    bool configProvided;
+    // argparse
+    argparse::ArgumentParser program("App");
+    program.add_argument("--mode").default_value(string("1"));
+    program.add_argument("--role").default_value(string("server"));
+    program.add_argument("--config").default_value(string(""));
+
+    try {
+        program.parse_args(argc, argv);
+    } catch (const std::exception& err) {
+        std::cerr << err.what() << std::endl;
+        std::exit(1);
+    }
+
+    auto choice = stoi(program.get<string>("--mode"));
+    if (choice == 1 or choice == 2 ){}
+    else {
+        cout << "Chon sai che do: 1 - Cap nhat 1 chieu \t 2 - Cap nhat 2 chieu" <<endl;
+        return 1;
+    }
+    auto role = program.get<string>("--role");
+    if (choice == 1){
+        if (role == "server" || role == "Server") role_choice = 1;
+        else if (role == "client" || role == "Client") role_choice = 2;
+        else {
+            cout << "Chon sai vai tro: 1 - server \t 2- client" << endl;
+            return 1;
         }
-        if (choice ==3) {
-            is_continue = false;
-            break;
-        }
-        /// To: Process choice = 1 ( 1 chieu)
+    }
+    configProvided = program.is_used("--config");
+    if (configProvided){
         if (choice == 1){
-            system("clear");
-            cout << "Che do 1: Cap nhat du lieu 1 chieu" << endl;
-            cout << "Lua chon vai tro: [1] Server \t [2] Client\t";
-            cin >> role_choice;
-            if (role_choice == SERVER_ROLE){ 
-                cout << "Your choice: [1] - server" << endl;
-                cout << endl;
-                printIPAddress();
-                // Show server config
-                cout << endl;
-                show_server_config(SERVER_CONFIG);
-
-                // server config 
-                cout << "Thay doi/Tao moi server config? [y/N]" << "\t";
-                cin >> continue_choice;
-                if (continue_choice == "y") {
-                    string folderpath;
-                    string crcFile;
-                    string port;
-                    system("clear");
-                    cout << "Sua thong tin cua Server Config" << endl;
-                    do{
-                        cout << "folderPath: \t";
-                        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-                        getline(std::cin, folderpath);
-                        if(!folderpath.empty() &&!isFolderPath(folderpath)) continue;
-                        else break;
-                    } while (!folderpath.empty());
-                    do{
-                        cout << "Port: \t";
-                        getline(std::cin, port);
-                        if(!isInteger(port) && !port.empty()) continue;
-                        else break;
-                    }while(!port.empty());
-                    do{
-                        cout << ".crcFile: \t";
-                        getline(std::cin, crcFile);
-                        if(!isValidPath(crcFile) && !crcFile.empty()) continue;
-                        else break;
-                    } while (!crcFile.empty());
-                    json existingJsonData;
-                    if(openJsonFile(SERVER_CONFIG,existingJsonData)){
-                        std::ifstream inputFile(SERVER_CONFIG);
-                        inputFile >> existingJsonData;
-                        inputFile.close();
-                        if(!folderpath.empty()) existingJsonData.at("folderPath") = folderpath;
-                        if(!port.empty()) existingJsonData.at("port") = stoi(port);
-                        if(!crcFile.empty()) existingJsonData.at("crcFile") = crcFile;
-
-                        std::ofstream outputFile(SERVER_CONFIG);
-                        outputFile << existingJsonData;
-                        outputFile.close();
-                    } else {
-                        if(!folderpath.empty()) existingJsonData["folderPath"] = folderpath;
-                        else {
-                            cout << "Error: Loi file config...1" << endl;
-                            cout << folderpath << endl;
-                            continue;
-                        }
-                        if(!port.empty()) existingJsonData["port"] = stoi(port);
-                        else {
-                            cout << "Error: Loi file config...2" << endl;
-                            continue;
-                        }
-                        if(!crcFile.empty()) existingJsonData["crcFile"] = crcFile;
-                        else {
-                            cout << "Error: Loi file config...3" << endl;
-                            continue;
-                        }
-                        std::ofstream outputFile(SERVER_CONFIG);
-                        outputFile << existingJsonData;
-                        outputFile.close();
-                    }
+            ///mode 1
+            if (role_choice == SERVER_ROLE){
+                // SERVER_ROLE config in mode 1
+                if (isPathExists(SERVER_CONFIG)){
+                    // Da ton tai file config
+                    cout << "Mode 1 - Server config: " << endl;
+                    show_server_config(SERVER_CONFIG);
+                    cout <<endl << "Chinh sua: " << endl;
+                } else {
+                    // chua ton tai file config
+                    cout << "Tao file config cho Server(mode 1)" << endl;
                 }
-
-                
-                ThreadArgs* args = new ThreadArgs;
-                args->config = SERVER_CONFIG;
-                pthread_t crcThread;
-                // Tao crc thread
-                if(pthread_create(&crcThread, NULL, crcRoutineFunction, args) != 0){
-                    std::cerr <<"Failed to create crcThread" << std::endl;
-                }
-                // Contruct server
-                json conf;
-                std::ifstream inputFile(SERVER_CONFIG);
-                inputFile >> conf;
-                inputFile.close();
-                string folderPath = conf.at("folderPath");
-                string crcFile = conf.at("crcFile");
-                int port = conf.at("port");
-                ServerThreadArgs* server_args = new ServerThreadArgs;
-                server_args->folderPath = folderPath;
-                server_args->crcFile = crcFile;
-                server_args->port = port;
-                
-                pthread_t serverHostThread;
-
-                if(pthread_create(&serverHostThread, NULL, serverHostFunction, server_args)!=0){
-                    std::cerr << "Failed to create server host thread" << std::endl;
-                }
-
-                pthread_detach(crcThread);
-                pthread_detach(serverHostThread);
-
-                while (true){
-                    char userInput;
-                    sleep(1);
-                    cout << "Nhap yeu cau: \t";
-                    cin >> userInput;
-
-                    if (userInput == 'U'){
-                        pthread_kill(crcThread, SIGUSR1);
-                    }
-                    if (userInput == 'Q'){
-                        serverOffline = true;
-                        shouldTerminate = true;
-                        sleep(3);
-                        cout << getCurrentTime()<<"Phien lam viec ket thuc" << endl;
-                        break;
-                    }
-                }
-                delete args;
-                delete server_args;
-
-            } else if (role_choice == CLIENT_ROLE){
-                cout << "Your choice: [2] - Client" << endl;
-                cout << endl;
-                // Show Client config
-                show_client_config(CLIENT_CONFIG);
-
-                // Client config
-                cout << "Thay doi/Tao moi Client config? [y/N]" << "\t";
-                cin >> continue_choice;
-                if (continue_choice == "y"){
-                    string folderpath;
-                    string crcFile;
-                    string port;
-                    string ip;
-                    string subToSync;
-                    system("clear");
-                    cout << "Sua thong tin cua Client Config" << endl;
-                    do{
-                        cout << "folderPath: \t";
-                        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-                        getline(std::cin, folderpath);
-                        if(!folderpath.empty() &&!isFolderPath(folderpath)) continue;
-                        else break;
-                    } while (!folderpath.empty());
-                    do{
-                        cout << "Port: \t";
-                        getline(std::cin, port);
-                        if(!isInteger(port) && !port.empty()) continue;
-                        else break;
-                    }while(!port.empty());
-                    do{
-                        cout << "IP: \t";
-                        getline(std::cin, ip);
-                        if(!isIPAddress(ip) && !ip.empty()) continue;
-                        else break;
-                    }while(!ip.empty());
-                    do{
-                        cout << ".crcFile: \t";
-                        getline(std::cin, crcFile);
-                        if(!isValidPath(crcFile) && !crcFile.empty()) continue;
-                        else break;
-                    } while (!crcFile.empty());
-                    do{
-                        cout << "subToSync: \t";
-                        getline(std::cin, subToSync);
-                        if(!(subToSync == "/" or subToSync == "\\") && !subToSync.empty()) continue;
-                        else break;
-                    } while (!subToSync.empty());
-                    json existingJsonData;
-                    if(openJsonFile(CLIENT_CONFIG,existingJsonData)){
-                        std::ifstream inputFile(CLIENT_CONFIG);
-                        inputFile >> existingJsonData;
-                        inputFile.close();
-                        if(!folderpath.empty()) existingJsonData.at("folderPath") = folderpath;
-                        if(!port.empty()) existingJsonData.at("port") = stoi(port);
-                        if(!ip.empty()) existingJsonData.at("ip") = ip;
-                        if(!crcFile.empty()) existingJsonData.at("crcFile") = crcFile;
-                        if(!subToSync.empty()) existingJsonData.at("subToSync") = subToSync;
-                        std::ofstream outputFile(CLIENT_CONFIG);
-                        outputFile << existingJsonData;
-                        outputFile.close();
-                    } else {
-                        if(!folderpath.empty()) existingJsonData["folderPath"] = folderpath;
-                        else {
-                            cout << "Error: Loi file config...1" << endl;
-                            cout << folderpath << endl;
-                            continue;
-                        }
-                        if(!port.empty()) existingJsonData["port"] = stoi(port);
-                        else {
-                            cout << "Error: Loi file config...2" << endl;
-                            continue;
-                        }
-                        if(!ip.empty()) existingJsonData["ip"] = ip;
-                        else{
-                            cout << "Error: Loi file config...3" << endl;
-                            continue;
-                        }
-                        if(!crcFile.empty()) existingJsonData["crcFile"] = crcFile;
-                        else {
-                            cout << "Error: Loi file config...4" << endl;
-                            continue;
-                        }
-                        if(!subToSync.empty()) existingJsonData["subToSync"] = subToSync;
-                        else {
-                            cout << "Error: Loi file config...5" << endl;
-                            continue;
-                        }
-                        std::ofstream outputFile(CLIENT_CONFIG);
-                        outputFile << existingJsonData;
-                        outputFile.close();
-                    }
-                }
-
-                ThreadArgs* args = new ThreadArgs;
-                args->config = CLIENT_CONFIG;
-                pthread_t crcThread;
-                pthread_t clientCallThread;
-                // Tạo thread
-                if (pthread_create(&crcThread, NULL, crcRoutineFunction, args) != 0) {
-                    std::cerr << "Failed to create crcThread" << std::endl;
-                }
-
-                if(pthread_create(&clientCallThread, NULL, clientCallFunction, args) != 0){
-                    std::cerr << "Failed to create client call thread" << std::endl;
-                }
-
-                pthread_detach(crcThread);
-                pthread_detach(clientCallThread);
-
-                while (true) {
-                    char userInput;
-                    sleep(1);
-                    cout << "Nhap yeu cau: \t";
-                    cin >> userInput;
-
-                    if (userInput == 'U') {
-                        // Send signal to crcThread
-                        pthread_kill(crcThread, SIGUSR1);
-                    }
-
-                    if (userInput == 'S') {
-                        pthread_kill(clientCallThread, SIGUSR2);
-                    }
-                    if(userInput == 'Q') {
-                        shouldTerminate = true;
-                        sleep(1);
-                        cout << getCurrentTime() << "Phien lam viec ket thuc" << endl;
-                        break;
-                    }
-                }
-                delete args;
-            } else {
-                cout << "Lua chon khong dung !" << endl;
-
-            }
-        }
-
-
-        /// TODO: Process if choice == 2 ( xu ly 2 chieu)
-        if (choice == 2){
-            system("clear");
-            cout << "Che do : Cap nhat du lieu 2 chieu " << endl;
-            cout << endl;
-            printIPAddress();
-
-            cout << endl;
-            show_sync_config(SYNC_CONFIG);
-            cout << "Ban muon tiep tuc? [y/N]? ";
-            cin >> continue_choice;
-            if (continue_choice == "y") {
                 string folderpath;
                 string crcFile;
                 string port;
-                string port_host;
-                string ip;
-                string subToSync;
-                system("clear");
-                cout << "Sua thong tin cua Sync Config" << endl;
                 do{
-                    cout << "folderPath: \t";
-                    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                    cout << "\tfolderPath: \t";
                     getline(std::cin, folderpath);
                     if(!folderpath.empty() &&!isFolderPath(folderpath)) continue;
                     else break;
                 } while (!folderpath.empty());
                 do{
-                    cout << "Port for calling: \t";
+                    cout << "\tPort: \t";
                     getline(std::cin, port);
                     if(!isInteger(port) && !port.empty()) continue;
                     else break;
                 }while(!port.empty());
                 do{
-                    cout << "Port for hosting: \t";
-                    getline(std::cin, port_host);
-                    if(!isInteger(port_host) && !port_host.empty()) continue;
+                    cout << "\t.crcFile: \t";
+                    getline(std::cin, crcFile);
+                    if(!isValidPath(crcFile) && !crcFile.empty()) continue;
                     else break;
-                }while(!port_host.empty());
+                } while (!crcFile.empty());
+                json existingJsonData;
+                if(openJsonFile(SERVER_CONFIG,existingJsonData)){
+                    std::ifstream inputFile(SERVER_CONFIG);
+                    inputFile >> existingJsonData;
+                    inputFile.close();
+                    if(!folderpath.empty()) existingJsonData.at("folderPath") = folderpath;
+                    if(!port.empty()) existingJsonData.at("port") = stoi(port);
+                    if(!crcFile.empty()) existingJsonData.at("crcFile") = crcFile;
+
+                    std::ofstream outputFile(SERVER_CONFIG);
+                    outputFile << existingJsonData;
+                    outputFile.close();
+                } else {
+                    if(!folderpath.empty()) existingJsonData["folderPath"] = folderpath;
+                    else {
+                        cout << "Error: Loi file config...1" << endl;
+                        return 1;
+                    }
+                    if(!port.empty()) existingJsonData["port"] = stoi(port);
+                    else {
+                        cout << "Error: Loi file config...2" << endl;
+                        return 1;
+                    }
+                    if(!crcFile.empty()) existingJsonData["crcFile"] = crcFile;
+                    else {
+                        cout << "Error: Loi file config...3" << endl;
+                        return 1;
+                    }
+                    std::ofstream outputFile(SERVER_CONFIG);
+                    outputFile << existingJsonData;
+                    outputFile.close();
+                }
+                cout << endl << "Config thanh cong !" << endl;
+                
+            } else {
+                // CLIENT_ROLE config in mode 1
+                if(isPathExists(CLIENT_CONFIG)){
+                    // file con fig da ton tai
+                    cout << "Mode 1 - Client config: " << endl;
+                    show_client_config(CLIENT_CONFIG);
+                    cout <<endl << "Chinh sua: " << endl;
+                }else {
+                    // file config chua ton tai
+                    cout << "Tao file config cho Client(mode 1)" << endl;
+                }
+                string folderpath;
+                string crcFile;
+                string port;
+                string ip;
+                string subToSync;
                 do{
-                    cout << "IP: \t";
-                    getline(std::cin,ip);
+                    cout << "\tfolderPath: \t";
+                    getline(std::cin, folderpath);
+                    if(!folderpath.empty() &&!isFolderPath(folderpath)) continue;
+                    else break;
+                } while (!folderpath.empty());
+                do{
+                    cout << "\tPort: \t";
+                    getline(std::cin, port);
+                    if(!isInteger(port) && !port.empty()) continue;
+                    else break;
+                }while(!port.empty());
+                do{
+                    cout << "\tIP: \t";
+                    getline(std::cin, ip);
                     if(!isIPAddress(ip) && !ip.empty()) continue;
                     else break;
                 }while(!ip.empty());
                 do{
-                    cout << ".crcFile: \t";
+                    cout << "\t.crcFile: \t";
                     getline(std::cin, crcFile);
                     if(!isValidPath(crcFile) && !crcFile.empty()) continue;
                     else break;
                 } while (!crcFile.empty());
                 do{
-                    cout << "subToSync: \t";
+                    cout << "\tsubToSync: \t";
                     getline(std::cin, subToSync);
                     if(!(subToSync == "/" or subToSync == "\\") && !subToSync.empty()) continue;
                     else break;
                 } while (!subToSync.empty());
                 json existingJsonData;
-                if(openJsonFile(SYNC_CONFIG,existingJsonData)){
-                    std::ifstream inputFile(SYNC_CONFIG);
+                if(openJsonFile(CLIENT_CONFIG,existingJsonData)){
+                    std::ifstream inputFile(CLIENT_CONFIG);
                     inputFile >> existingJsonData;
                     inputFile.close();
                     if(!folderpath.empty()) existingJsonData.at("folderPath") = folderpath;
                     if(!port.empty()) existingJsonData.at("port") = stoi(port);
-                    if(!port_host.empty()) existingJsonData.at("port_host") = stoi(port_host);
                     if(!ip.empty()) existingJsonData.at("ip") = ip;
                     if(!crcFile.empty()) existingJsonData.at("crcFile") = crcFile;
                     if(!subToSync.empty()) existingJsonData.at("subToSync") = subToSync;
-                    std::ofstream outputFile(SYNC_CONFIG);
+                    std::ofstream outputFile(CLIENT_CONFIG);
                     outputFile << existingJsonData;
                     outputFile.close();
-                } else{
+                } else {
                     if(!folderpath.empty()) existingJsonData["folderPath"] = folderpath;
                     else {
                         cout << "Error: Loi file config...1" << endl;
                         cout << folderpath << endl;
-                        continue;
+                        return 1;
                     }
                     if(!port.empty()) existingJsonData["port"] = stoi(port);
                     else {
                         cout << "Error: Loi file config...2" << endl;
-                        continue;
-                    }
-                    if(!port_host.empty()) existingJsonData["port_host"] = stoi(port_host);
-                    else {
-                        cout << "Error: Loi file config...2.1" << endl;
-                        continue;
+                        return 1;
                     }
                     if(!ip.empty()) existingJsonData["ip"] = ip;
                     else{
                         cout << "Error: Loi file config...3" << endl;
-                        continue;
+                        return 1;
                     }
                     if(!crcFile.empty()) existingJsonData["crcFile"] = crcFile;
                     else {
                         cout << "Error: Loi file config...4" << endl;
-                        continue;
+                        return 1;
                     }
                     if(!subToSync.empty()) existingJsonData["subToSync"] = subToSync;
                     else {
                         cout << "Error: Loi file config...5" << endl;
-                        continue;
+                        return 1;
                     }
-                    std::ofstream outputFile(SYNC_CONFIG);
+                    std::ofstream outputFile(CLIENT_CONFIG);
                     outputFile << existingJsonData;
                     outputFile.close();
                 }
+                cout << endl << "Config thanh cong !" << endl;
             }
-            // crc function
-            ThreadArgs* args = new ThreadArgs;
-            args->config = SYNC_CONFIG;
-            pthread_t crcThread;
-            if(pthread_create(&crcThread, NULL, crcRoutineFunction,args)!=0){
-                std::cerr <<"Failed to create crcThread" << std::endl;
+        } else {
+            //mode 2
+            if (isPathExists(SYNC_CONFIG)){
+                // file con fig ton tai
+                cout << "Mode 2 - config: " << endl;
+                show_sync_config(SYNC_CONFIG);
+                cout <<endl << "Chinh sua: " << endl;
+
+            } else {
+                // file config k ton tai
+                cout << "Tao file config cho mode 2" << endl;
+            }
+            string folderpath;
+            string crcFile;
+            string port;
+            string port_host;
+            string ip;
+            string subToSync;
+            do{
+                cout << "\tfolderPath: \t";
+                getline(std::cin, folderpath);
+                if(!folderpath.empty() &&!isFolderPath(folderpath)) continue;
+                else break;
+            } while (!folderpath.empty());
+            do{
+                cout << "\tPort for calling: \t";
+                getline(std::cin, port);
+                if(!isInteger(port) && !port.empty()) continue;
+                else break;
+            }while(!port.empty());
+            do{
+                cout << "\tPort for hosting: \t";
+                getline(std::cin, port_host);
+                if(!isInteger(port_host) && !port_host.empty()) continue;
+                else break;
+            }while(!port_host.empty());
+            do{
+                cout << "\tIP: \t";
+                getline(std::cin,ip);
+                if(!isIPAddress(ip) && !ip.empty()) continue;
+                else break;
+            }while(!ip.empty());
+            do{
+                cout << "\t.crcFile: \t";
+                getline(std::cin, crcFile);
+                if(!isValidPath(crcFile) && !crcFile.empty()) continue;
+                else break;
+            } while (!crcFile.empty());
+            do{
+                cout << "\tsubToSync: \t";
+                getline(std::cin, subToSync);
+                if(!(subToSync == "/" or subToSync == "\\") && !subToSync.empty()) continue;
+                else break;
+            } while (!subToSync.empty());
+            json existingJsonData;
+            if(openJsonFile(SYNC_CONFIG,existingJsonData)){
+                std::ifstream inputFile(SYNC_CONFIG);
+                inputFile >> existingJsonData;
+                inputFile.close();
+                if(!folderpath.empty()) existingJsonData.at("folderPath") = folderpath;
+                if(!port.empty()) existingJsonData.at("port") = stoi(port);
+                if(!port_host.empty()) existingJsonData.at("port_host") = stoi(port_host);
+                if(!ip.empty()) existingJsonData.at("ip") = ip;
+                if(!crcFile.empty()) existingJsonData.at("crcFile") = crcFile;
+                if(!subToSync.empty()) existingJsonData.at("subToSync") = subToSync;
+                std::ofstream outputFile(SYNC_CONFIG);
+                outputFile << existingJsonData;
+                outputFile.close();
+            } else{
+                if(!folderpath.empty()) existingJsonData["folderPath"] = folderpath;
+                else {
+                    cout << "Error: Loi file config...1" << endl;
+                    cout << folderpath << endl;
+                    return 1;
+                }
+                if(!port.empty()) existingJsonData["port"] = stoi(port);
+                else {
+                    cout << "Error: Loi file config...2" << endl;
+                    return 1;
+                }
+                if(!port_host.empty()) existingJsonData["port_host"] = stoi(port_host);
+                else {
+                    cout << "Error: Loi file config...2.1" << endl;
+                    return 1;
+                }
+                if(!ip.empty()) existingJsonData["ip"] = ip;
+                else{
+                    cout << "Error: Loi file config...3" << endl;
+                    return 1;
+                }
+                if(!crcFile.empty()) existingJsonData["crcFile"] = crcFile;
+                else {
+                    cout << "Error: Loi file config...4" << endl;
+                    return 1;
+                }
+                if(!subToSync.empty()) existingJsonData["subToSync"] = subToSync;
+                else {
+                    cout << "Error: Loi file config...5" << endl;
+                    return 1;
+                }
+                std::ofstream outputFile(SYNC_CONFIG);
+                outputFile << existingJsonData;
+                outputFile.close();
+            }
+            cout << endl << "Config thanh cong !" << endl;
+        }
+        return 0;
+    }
+    if ((choice == 1)&& (role_choice == SERVER_ROLE)){
+        // process for server mode 1
+        ThreadArgs* args = new ThreadArgs;
+        args->config = SERVER_CONFIG;
+        pthread_t crcThread;
+        // Tao crc thread
+        if(pthread_create(&crcThread, NULL, crcRoutineFunction, args) != 0){
+            std::cerr <<"Failed to create crcThread" << std::endl;
+        }
+        // Contruct server
+        json conf;
+        std::ifstream inputFile(SERVER_CONFIG);
+        inputFile >> conf;
+        inputFile.close();
+        string folderPath = conf.at("folderPath");
+        string crcFile = conf.at("crcFile");
+        int port = conf.at("port");
+        ServerThreadArgs* server_args = new ServerThreadArgs;
+        server_args->folderPath = folderPath;
+        server_args->crcFile = crcFile;
+        server_args->port = port;
+        
+        pthread_t serverHostThread;
+
+        if(pthread_create(&serverHostThread, NULL, serverHostFunction, server_args)!=0){
+            std::cerr << "Failed to create server host thread" << std::endl;
+        }
+
+        pthread_detach(crcThread);
+        pthread_detach(serverHostThread);
+
+        while (true){
+            char userInput;
+            sleep(1);
+            cout << "Nhap yeu cau: \t";
+            cin >> userInput;
+
+            if (userInput == 'U'){
+                pthread_kill(crcThread, SIGUSR1);
+            }
+            if (userInput == 'Q'){
+                serverOffline = true;
+                shouldTerminate = true;
+                sleep(3);
+                cout << getCurrentTime()<<"Phien lam viec ket thuc" << endl;
+                break;
+            }
+        }
+        delete args;
+        delete server_args;
+    }
+    else if (choice == 1 && role_choice == CLIENT_ROLE){
+        // process for client mode 1
+        CRCRoutine* crcRoutine = new CRCRoutine(); 
+        int crc_result = crcRoutine->crcRoutine(CLIENT_CONFIG);
+        delete crcRoutine;
+        cout << getCurrentTime() << "Dong bo du lieu: ";
+        try{
+            Client client(CLIENT_CONFIG);
+            client.synchronizeData();
+        } catch(const std::exception& e){
+            std::cerr << e.what() << std::endl;
+        }
+    } else {
+        // crc function
+        ThreadArgs* args = new ThreadArgs;
+        args->config = SYNC_CONFIG;
+        pthread_t crcThread;
+        if(pthread_create(&crcThread, NULL, crcRoutineFunction,args)!=0){
+            std::cerr <<"Failed to create crcThread" << std::endl;
+        }
+
+        // call sync 
+        pthread_t callThread;
+        if(pthread_create(&callThread, NULL, clientCallFunction, args) != 0){
+            std::cerr << "Failed to create call thread" << std::endl;
+        }
+        // constructor host
+        json conf;
+        std::ifstream inputFile(SYNC_CONFIG);
+        inputFile >> conf;
+        inputFile.close();
+        string folderPath = conf.at("folderPath");
+        string crcFile_ = conf.at("crcFile");
+        int port_ = conf.at("port_host");
+        ServerThreadArgs *host_args = new ServerThreadArgs;
+        host_args->folderPath = folderPath;
+        host_args->crcFile = crcFile_;
+        host_args->port = port_;
+        pthread_t hostThread;
+        if (pthread_create(&hostThread, NULL, serverHostFunction, host_args) != 0){
+            std::cerr << "Failed to create host thread" << std::endl;
+        }
+        pthread_detach(callThread);
+        pthread_detach(crcThread);
+        pthread_detach(hostThread);
+        while (true) {
+            char userInput;
+            sleep(1);
+            cout << "Nhap yeu cau: \t";
+            cin >> userInput;
+
+            if (userInput == 'U') {
+                // Send signal to crcThread
+                pthread_kill(crcThread, SIGUSR1);
             }
 
-            // call sync 
-            pthread_t callThread;
-            if(pthread_create(&callThread, NULL, clientCallFunction, args) != 0){
-                std::cerr << "Failed to create call thread" << std::endl;
+            if (userInput == 'S') {
+                pthread_kill(callThread, SIGUSR2);
             }
-            // constructor host
-            json conf;
-            std::ifstream inputFile(SYNC_CONFIG);
-            inputFile >> conf;
-            inputFile.close();
-            string folderPath = conf.at("folderPath");
-            string crcFile_ = conf.at("crcFile");
-            int port_ = conf.at("port_host");
-            ServerThreadArgs *host_args = new ServerThreadArgs;
-            host_args->folderPath = folderPath;
-            host_args->crcFile = crcFile_;
-            host_args->port = port_;
-            pthread_t hostThread;
-            if (pthread_create(&hostThread, NULL, serverHostFunction, host_args) != 0){
-                std::cerr << "Failed to create host thread" << std::endl;
+            if(userInput == 'Q') {
+                shouldTerminate = true;
+                sleep(3);
+                cout << getCurrentTime() << "Phien lam viec ket thuc" << endl;
+                break;
             }
-            pthread_detach(callThread);
-            pthread_detach(crcThread);
-            pthread_detach(hostThread);
-            while (true) {
-                char userInput;
-                sleep(1);
-                cout << "Nhap yeu cau: \t";
-                cin >> userInput;
+        }
+        delete args;
+        delete host_args;
+    }
 
-                if (userInput == 'U') {
-                    // Send signal to crcThread
-                    pthread_kill(crcThread, SIGUSR1);
-                }
-
-                if (userInput == 'S') {
-                    pthread_kill(callThread, SIGUSR2);
-                }
-                if(userInput == 'Q') {
-                    shouldTerminate = true;
-                    sleep(3);
-                    cout << getCurrentTime() << "Phien lam viec ket thuc" << endl;
-                    break;
-                }
-            }
-            delete args;
-            delete host_args;
-        } 
     reset();
-    }while(is_continue);
     return 0;
 }
