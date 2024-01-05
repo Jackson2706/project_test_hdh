@@ -1,0 +1,4 @@
+./App --mode 1 --role server --config
+./App --mode 2 --config
+./App --mode 1 --role server
+./App --mode 2
