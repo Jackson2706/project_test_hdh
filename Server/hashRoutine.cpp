@@ -3,6 +3,7 @@
 #include <fstream>
 #include <sstream>
 #include <iomanip>
+#include <crypto++/sha.h>
 
 HashRoutine::HashRoutine() {
 }
@@ -26,8 +27,8 @@ json HashRoutine::readJsonFile(const std::string& filePath) {
     try {
         std::ifstream fileIn(filePath);
         fileIn >> j;
-    } catch (...) {
-        // Ignore errors for now
+        fileIn.close();
+    } catch (const std::exception& e) {
     }
     return j;
 }
@@ -38,31 +39,35 @@ void HashRoutine::writeJsonFile(const std::string& filePath, const json& value) 
 }
 
 std::string HashRoutine::calculateHash(const std::string& fileName) {
-    std::ifstream file(fileName, std::ios::binary);
-    if (!file.is_open()) {
-        // Handle file opening error if needed
+    std::ifstream f(fileName);
+    if (!f.is_open()) {
+        std::cout << "Không thể mở file." << std::endl;
         return "";
     }
 
-    SHA256_CTX sha256;
-    SHA256_Init(&sha256);
+    // Khởi tạo hàm hash
+    CryptoPP::SHA256 hash;
 
-    char buffer[4096];
-    while (file.read(buffer, sizeof(buffer))) {
-        SHA256_Update(&sha256, buffer, sizeof(buffer));
+    // Đọc nội dung file
+    char buffer[1024];
+    while (f.read(buffer, sizeof(buffer))) {
+        hash.Update(reinterpret_cast<const CryptoPP::byte*>(buffer), f.gcount());
     }
 
-    unsigned char hash[SHA256_DIGEST_LENGTH];
-    SHA256_Final(hash, &sha256);
-
+    // Tính toán hash
+    CryptoPP::byte hash_digest[CryptoPP::SHA256::DIGESTSIZE];
+    hash.Final(hash_digest);
+    std::string result = "";
     std::stringstream hashStream;
-    for (int i = 0; i < SHA256_DIGEST_LENGTH; ++i) {
-        hashStream << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(hash[i]);
+    hashStream << std::hex << std::setw(2) << std::setfill('0');
+    for (int i = 0; i < CryptoPP::SHA256::DIGESTSIZE; i++) {
+        hashStream << (int)hash_digest[i];
     }
 
-    return hashStream.str();
+    // Lưu giá trị hash vào std::string
+    std::string hashValue = hashStream.str();
+    return hashValue;
 }
-
 void HashRoutine::hashIter(const std::string& path) {
     try {
         for (const auto& entry : fs::recursive_directory_iterator(path)) {
@@ -85,6 +90,7 @@ void HashRoutine::hashOfFile(const std::string& absFile) {
     std::string hashPath = folderPath + "/" + hashFile;
     json hashes = readJsonFile(hashPath);
     hashes[absFile.substr(folderPath.length())] = calculateHash(absFile);
+    
     writeJsonFile(hashPath, hashes);
 }
 

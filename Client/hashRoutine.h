@@ -3,7 +3,8 @@
 
 #include <string>
 #include <filesystem>
-#include <openssl/sha.h>
+#include <openssl/evp.h>
+#include <openssl/rand.h>
 #include <nlohmann/json.hpp>
 
 namespace fs = std::filesystem;

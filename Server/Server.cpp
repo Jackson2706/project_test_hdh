@@ -111,7 +111,6 @@ void MyServer::handle_request(const httplib::Request& req, httplib::Response& re
                 std::string filepath = query_components.at("/File?FilePath");
                 filepath = urlDecode(filepath);
                 filepath = pathJoin(folderPath, filepath);
-                std::cout << filepath << std::endl;
                 if (file_exist(filepath)) {
                     res.status = 200;
                     std::string body = get_file_bytes(filepath);
