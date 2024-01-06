@@ -106,17 +106,17 @@ void show_server_config(const std::string config_json){
     if (isPathExists(config_json)){
         ifstream configFile(config_json, ifstream::in);
         if (!configFile.is_open()) {
-            cerr << "Error: Unable to open config file." << endl;
+            cerr << getCurrentTime() <<"Error: Unable to open config file." << endl;
             return;
         }
         json conf;
         configFile >> conf;
-        cout << "Thong tin tu server config: "<<endl;
+        cout << getCurrentTime() << "Thong tin tu server config: "<<endl;
         cout << "\tfolderPath: "<< "\t" <<conf.at("folderPath")<<endl;
         cout << "\tport:       " << "\t" << conf.at("port") <<endl;
         cout << "\t.crcFile:   "<< "\t" << conf.at("crcFile")<<endl;
     } else {
-        cout << "Canh bao: \t Duong dan khong ton tai !" << endl;
+        cout << getCurrentTime() << "Canh bao: \t Duong dan khong ton tai !" << endl;
     }
 }
 
@@ -124,19 +124,19 @@ void show_client_config(const std::string config_json){
     if (isPathExists(config_json)){
         ifstream configFile(config_json, ifstream::in);
         if(!configFile.is_open()){
-            cerr << "Error: Unable to open config file." << endl;
+            cerr << getCurrentTime() << "Error: Unable to open config file." << endl;
             return;
         }
         json conf;
         configFile >> conf;
-        cout << "Thong tin tu client config: "<<endl;
+        cout << getCurrentTime() << "Thong tin tu client config: "<<endl;
         cout << "\tfolderPath: "<< "\t" <<conf.at("folderPath")<<endl;
         cout << "\tport:       " << "\t" << conf.at("port") <<endl;
         cout << "\tip:         "<< "\t" << conf.at("ip")<<endl;
         cout << "\t.crcFile:   "<< "\t" << conf.at("crcFile")<<endl;
         cout << "\tsubToSync:  "<< "\t" << conf.at("subToSync")<<endl;
     } else {
-        cout << "Canh bao: \t Duong dan khong ton tai !" << endl;
+        cout << getCurrentTime() << "Canh bao: \t Duong dan khong ton tai !" << endl;
     }
 }
 
@@ -144,12 +144,12 @@ void show_sync_config(const std::string config_json){
     if (isPathExists(config_json)){
         ifstream configFile(config_json, ifstream::in);
         if (!configFile.is_open()) {
-            cerr << "Error: Unable to open config file." << endl;
+            cerr << getCurrentTime() << "Error: Unable to open config file." << endl;
             return;
         }
         json conf;
         configFile >> conf;
-        cout << "Thong tin tu client config: "<<endl;
+        cout <<getCurrentTime() << "Thong tin tu client config: "<<endl;
         cout << "\tfolderPath:       "<< "\t" <<conf.at("folderPath")<<endl;
         cout << "\tport for calling: " << "\t" << conf.at("port") <<endl;
         cout << "\tport for hosting: " << "\t" << conf.at("port_host") <<endl;
@@ -157,7 +157,7 @@ void show_sync_config(const std::string config_json){
         cout << "\t.crcFile:         "<< "\t" << conf.at("crcFile")<<endl;
         cout << "\tsubToSync:        "<< "\t" << conf.at("subToSync")<<endl;
     } else {
-        cout << "Canh bao: \t Duong dan khong ton tai !" << endl;
+        cout << getCurrentTime() << "Canh bao: \t Duong dan khong ton tai !" << endl;
     }
 }
 
@@ -289,7 +289,7 @@ int main(int argc, char *argv[]) {
     auto choice = stoi(program.get<string>("--mode"));
     if (choice == 1 or choice == 2 ){}
     else {
-        cout << "Chon sai che do: 1 - Cap nhat 1 chieu \t 2 - Cap nhat 2 chieu" <<endl;
+        cout << getCurrentTime() << "Chon sai che do: 1 - Cap nhat 1 chieu \t 2 - Cap nhat 2 chieu" <<endl;
         return 1;
     }
     auto role = program.get<string>("--role");
@@ -297,7 +297,7 @@ int main(int argc, char *argv[]) {
         if (role == "server" || role == "Server") role_choice = 1;
         else if (role == "client" || role == "Client") role_choice = 2;
         else {
-            cout << "Chon sai vai tro: 1 - server \t 2- client" << endl;
+            cout << getCurrentTime() << "Chon sai vai tro: 1 - server \t 2- client" << endl;
             return 1;
         }
     }
@@ -309,12 +309,12 @@ int main(int argc, char *argv[]) {
                 // SERVER_ROLE config in mode 1
                 if (isPathExists(SERVER_CONFIG)){
                     // Da ton tai file config
-                    cout << "Mode 1 - Server config: " << endl;
+                    cout << getCurrentTime() << "Mode 1 - Server config: " << endl;
                     show_server_config(SERVER_CONFIG);
                     cout <<endl << "Chinh sua: " << endl;
                 } else {
                     // chua ton tai file config
-                    cout << "Tao file config cho Server(mode 1)" << endl;
+                    cout << getCurrentTime() << "Tao file config cho Server(mode 1)" << endl;
                 }
                 string folderpath;
                 string crcFile;
@@ -352,35 +352,35 @@ int main(int argc, char *argv[]) {
                 } else {
                     if(!folderpath.empty()) existingJsonData["folderPath"] = folderpath;
                     else {
-                        cout << "Error: Loi file config...1" << endl;
+                        cout << getCurrentTime() << "Error: Loi file config...1" << endl;
                         return 1;
                     }
                     if(!port.empty()) existingJsonData["port"] = stoi(port);
                     else {
-                        cout << "Error: Loi file config...2" << endl;
+                        cout << getCurrentTime() << "Error: Loi file config...2" << endl;
                         return 1;
                     }
                     if(!crcFile.empty()) existingJsonData["crcFile"] = crcFile;
                     else {
-                        cout << "Error: Loi file config...3" << endl;
+                        cout << getCurrentTime() << "Error: Loi file config...3" << endl;
                         return 1;
                     }
                     std::ofstream outputFile(SERVER_CONFIG);
                     outputFile << existingJsonData;
                     outputFile.close();
                 }
-                cout << endl << "Config thanh cong !" << endl;
+                cout << endl <<getCurrentTime() << "Config thanh cong !" << endl;
                 
             } else {
                 // CLIENT_ROLE config in mode 1
                 if(isPathExists(CLIENT_CONFIG)){
                     // file con fig da ton tai
-                    cout << "Mode 1 - Client config: " << endl;
+                    cout << getCurrentTime() <<"Mode 1 - Client config: " << endl;
                     show_client_config(CLIENT_CONFIG);
                     cout <<endl << "Chinh sua: " << endl;
                 }else {
                     // file config chua ton tai
-                    cout << "Tao file config cho Client(mode 1)" << endl;
+                    cout << getCurrentTime() << "Tao file config cho Client(mode 1)" << endl;
                 }
                 string folderpath;
                 string crcFile;
@@ -433,47 +433,47 @@ int main(int argc, char *argv[]) {
                 } else {
                     if(!folderpath.empty()) existingJsonData["folderPath"] = folderpath;
                     else {
-                        cout << "Error: Loi file config...1" << endl;
+                        cout << getCurrentTime() <<  "Error: Loi file config...1" << endl;
                         cout << folderpath << endl;
                         return 1;
                     }
                     if(!port.empty()) existingJsonData["port"] = stoi(port);
                     else {
-                        cout << "Error: Loi file config...2" << endl;
+                        cout << getCurrentTime() <<  "Error: Loi file config...2" << endl;
                         return 1;
                     }
                     if(!ip.empty()) existingJsonData["ip"] = ip;
                     else{
-                        cout << "Error: Loi file config...3" << endl;
+                        cout << getCurrentTime() << "Error: Loi file config...3" << endl;
                         return 1;
                     }
                     if(!crcFile.empty()) existingJsonData["crcFile"] = crcFile;
                     else {
-                        cout << "Error: Loi file config...4" << endl;
+                        cout << getCurrentTime() << "Error: Loi file config...4" << endl;
                         return 1;
                     }
                     if(!subToSync.empty()) existingJsonData["subToSync"] = subToSync;
                     else {
-                        cout << "Error: Loi file config...5" << endl;
+                        cout << getCurrentTime() << "Error: Loi file config...5" << endl;
                         return 1;
                     }
                     std::ofstream outputFile(CLIENT_CONFIG);
                     outputFile << existingJsonData;
                     outputFile.close();
                 }
-                cout << endl << "Config thanh cong !" << endl;
+                cout << endl <<getCurrentTime() << "Config thanh cong !" << endl;
             }
         } else {
             //mode 2
             if (isPathExists(SYNC_CONFIG)){
                 // file con fig ton tai
-                cout << "Mode 2 - config: " << endl;
+                cout <<getCurrentTime() <<  "Mode 2 - config: " << endl;
                 show_sync_config(SYNC_CONFIG);
                 cout <<endl << "Chinh sua: " << endl;
 
             } else {
                 // file config k ton tai
-                cout << "Tao file config cho mode 2" << endl;
+                cout << getCurrentTime() << "Tao file config cho mode 2" << endl;
             }
             string folderpath;
             string crcFile;
@@ -534,40 +534,40 @@ int main(int argc, char *argv[]) {
             } else{
                 if(!folderpath.empty()) existingJsonData["folderPath"] = folderpath;
                 else {
-                    cout << "Error: Loi file config...1" << endl;
+                    cout << getCurrentTime() << "Error: Loi file config...1" << endl;
                     cout << folderpath << endl;
                     return 1;
                 }
                 if(!port.empty()) existingJsonData["port"] = stoi(port);
                 else {
-                    cout << "Error: Loi file config...2" << endl;
+                    cout << getCurrentTime() << "Error: Loi file config...2" << endl;
                     return 1;
                 }
                 if(!port_host.empty()) existingJsonData["port_host"] = stoi(port_host);
                 else {
-                    cout << "Error: Loi file config...2.1" << endl;
+                    cout << getCurrentTime() << "Error: Loi file config...2.1" << endl;
                     return 1;
                 }
                 if(!ip.empty()) existingJsonData["ip"] = ip;
                 else{
-                    cout << "Error: Loi file config...3" << endl;
+                    cout << getCurrentTime() << "Error: Loi file config...3" << endl;
                     return 1;
                 }
                 if(!crcFile.empty()) existingJsonData["crcFile"] = crcFile;
                 else {
-                    cout << "Error: Loi file config...4" << endl;
+                    cout << getCurrentTime() << "Error: Loi file config...4" << endl;
                     return 1;
                 }
                 if(!subToSync.empty()) existingJsonData["subToSync"] = subToSync;
                 else {
-                    cout << "Error: Loi file config...5" << endl;
+                    cout << getCurrentTime() <<  "Error: Loi file config...5" << endl;
                     return 1;
                 }
                 std::ofstream outputFile(SYNC_CONFIG);
                 outputFile << existingJsonData;
                 outputFile.close();
             }
-            cout << endl << "Config thanh cong !" << endl;
+            cout << endl << getCurrentTime() << "Config thanh cong !" << endl;
         }
         return 0;
     }
@@ -582,7 +582,7 @@ int main(int argc, char *argv[]) {
         pthread_t crcThread;
         // Tao crc thread
         if(pthread_create(&crcThread, NULL, crcRoutineFunction, args) != 0){
-            std::cerr <<"Failed to create crcThread" << std::endl;
+            std::cerr << getCurrentTime() << "Failed to create crcThread" << std::endl;
         }
         // Contruct server
         json conf;
@@ -600,7 +600,7 @@ int main(int argc, char *argv[]) {
         pthread_t serverHostThread;
 
         if(pthread_create(&serverHostThread, NULL, serverHostFunction, server_args)!=0){
-            std::cerr << "Failed to create server host thread" << std::endl;
+            std::cerr << getCurrentTime() << "Failed to create server host thread" << std::endl;
         }
 
         pthread_detach(crcThread);
@@ -609,7 +609,7 @@ int main(int argc, char *argv[]) {
         while (true){
             char userInput;
             sleep(1);
-            cout << "Nhap yeu cau: \t";
+            cout <<getCurrentTime() << "Nhap yeu cau: \t";
             cin >> userInput;
 
             if (userInput == 'U'){
@@ -629,7 +629,7 @@ int main(int argc, char *argv[]) {
     else if (choice == 1 && role_choice == CLIENT_ROLE){
         // process for client mode 1
         if (!isPathExists(CLIENT_CONFIG)){
-            cout << "File config khong ton tai" << endl;
+            cout << getCurrentTime() << "File config khong ton tai" << endl;
             return 1;
         }
         CRCRoutine* crcRoutine = new CRCRoutine(); 
@@ -646,20 +646,20 @@ int main(int argc, char *argv[]) {
     } else {
         // crc function
         if(!isPathExists(SYNC_CONFIG)){
-            cout << "file config khong ton tai" << endl;
+            cout << getCurrentTime() << "file config khong ton tai" << endl;
             return 1;
         }
         ThreadArgs* args = new ThreadArgs;
         args->config = SYNC_CONFIG;
         pthread_t crcThread;
         if(pthread_create(&crcThread, NULL, crcRoutineFunction,args)!=0){
-            std::cerr <<"Failed to create crcThread" << std::endl;
+            std::cerr << getCurrentTime() << "Failed to create crcThread" << std::endl;
         }
 
         // call sync 
         pthread_t callThread;
         if(pthread_create(&callThread, NULL, clientCallFunction, args) != 0){
-            std::cerr << "Failed to create call thread" << std::endl;
+            std::cerr << getCurrentTime() << "Failed to create call thread" << std::endl;
         }
         // constructor host
         json conf;
@@ -675,7 +675,7 @@ int main(int argc, char *argv[]) {
         host_args->port = port_;
         pthread_t hostThread;
         if (pthread_create(&hostThread, NULL, serverHostFunction, host_args) != 0){
-            std::cerr << "Failed to create host thread" << std::endl;
+            std::cerr << getCurrentTime() << "Failed to create host thread" << std::endl;
         }
         pthread_detach(callThread);
         pthread_detach(crcThread);
@@ -683,7 +683,7 @@ int main(int argc, char *argv[]) {
         while (true) {
             char userInput;
             sleep(1);
-            cout << "Nhap yeu cau: \t";
+            cout <<getCurrentTime() << "Nhap yeu cau: \t";
             cin >> userInput;
 
             if (userInput == 'U') {
@@ -697,7 +697,7 @@ int main(int argc, char *argv[]) {
             if(userInput == 'Q') {
                 shouldTerminate = true;
                 sleep(3);
-                cout << getCurrentTime() << "Phien lam viec ket thuc" << endl;
+                cout << getCurrentTime() << getCurrentTime() << "Phien lam viec ket thuc" << endl;
                 break;
             }
         }
