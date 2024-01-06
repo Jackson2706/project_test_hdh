@@ -35,7 +35,7 @@ make
 sudo make install
 
 cd ../../../
-
+sudo apt-get install libcrypto++-dev libcrypto++-doc libcrypto++-utils
 # ### 6. Build app
 # chmod u+x ./run.sh
 # ./run.sh
