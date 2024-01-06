@@ -573,6 +573,10 @@ int main(int argc, char *argv[]) {
     }
     if ((choice == 1)&& (role_choice == SERVER_ROLE)){
         // process for server mode 1
+        if(!isPathExists(SERVER_CONFIG)){
+            cout << "file config khong ton tai" << endl;
+            return 1;
+        }
         ThreadArgs* args = new ThreadArgs;
         args->config = SERVER_CONFIG;
         pthread_t crcThread;
@@ -624,6 +628,10 @@ int main(int argc, char *argv[]) {
     }
     else if (choice == 1 && role_choice == CLIENT_ROLE){
         // process for client mode 1
+        if (!isPathExists(CLIENT_CONFIG)){
+            cout << "File config khong ton tai" << endl;
+            return 1;
+        }
         CRCRoutine* crcRoutine = new CRCRoutine(); 
         int crc_result = crcRoutine->crcRoutine(CLIENT_CONFIG);
         delete crcRoutine;
@@ -637,6 +645,10 @@ int main(int argc, char *argv[]) {
         cout << getCurrentTime() << "Phien lam viec ket thuc" << endl;
     } else {
         // crc function
+        if(!isPathExists(SYNC_CONFIG)){
+            cout << "file config khong ton tai" << endl;
+            return 1;
+        }
         ThreadArgs* args = new ThreadArgs;
         args->config = SYNC_CONFIG;
         pthread_t crcThread;
