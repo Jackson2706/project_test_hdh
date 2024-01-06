@@ -11,12 +11,12 @@ namespace fs = std::filesystem;
 class Client {
 private:
     std::string folderPath;
-    std::string crcFile;
+    std::string hashFile;
     std::string ip;
     int port;
     std::string subToSync;
 
-    json downloadCRCS();
+    json downloadHASHS();
     json scanFolder();
     json dictReduce(json& masterJson, json& minorJson);
     std::string downloadFile(const std::string& filepath);

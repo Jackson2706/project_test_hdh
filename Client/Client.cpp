@@ -10,14 +10,14 @@ Client::Client(const std::string& configPath) {
     json conf;
     configFile >> conf;
     folderPath = conf.at("folderPath");
-    crcFile = conf.at("crcFile");
+    hashFile = conf.at("hashFile");
     ip = conf.at("ip");
     port = conf.at("port");
     subToSync = conf.at("subToSync");
 
 }
 
-json Client::downloadCRCS() {
+json Client::downloadHASHS() {
     cpr::Header headers{{"TokenKey", "aaa"}};
     std::string url = "http://" + ip + ":" + std::to_string(port) + "/ListOfAll";
     cpr::Response r = cpr::Get(cpr::Url{url}, headers);
@@ -28,9 +28,9 @@ json Client::downloadCRCS() {
 json Client::scanFolder() {
     json filedict = {};
     for (const auto& entry : fs::recursive_directory_iterator(folderPath)) {
-        if (entry.path().filename() == crcFile) {
-            std::ifstream crcFile(entry.path().string(), std::ifstream::in);
-            crcFile >> filedict;
+        if (entry.path().filename() == hashFile) {
+            std::ifstream hashFile(entry.path().string(), std::ifstream::in);
+            hashFile >> filedict;
         }
     }
     return filedict;
@@ -76,25 +76,25 @@ bool Client::writeDatatoFile(const std::string& absPath, const std::string& data
 }
 
 void Client::synchronizeData() {
-    json serverCrcs = downloadCRCS();
-    json clientCrcs = scanFolder();
-    serverCrcs = dictReduce(serverCrcs, clientCrcs);
+    json serverHashs = downloadHASHS();
+    json clientHashs = scanFolder();
+    serverHashs = dictReduce(serverHashs, clientHashs);
 
-    std::vector<std::string> serverCrcsFilteredKeys;
+    std::vector<std::string> serverHashsFilteredKeys;
 
-    for (const auto& entry : serverCrcs.items()) {
+    for (const auto& entry : serverHashs.items()) {
         const std::string& key = entry.key();
         if (key.find(subToSync) == 0) {
-            serverCrcsFilteredKeys.push_back(key);
+            serverHashsFilteredKeys.push_back(key);
         }
     }
-
+    std::cout << "Pass 1" << std::endl;
     int i = 0;
     std::string absPath;
     std::string data;
     bool write_status;
 
-    for (const auto& k : serverCrcsFilteredKeys) {
+    for (const auto& k : serverHashsFilteredKeys) {
         i++;
         absPath = folderPath + "/" + k;
         std::cout << "[" << i << "] Start download of: " << k;

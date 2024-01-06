@@ -16,7 +16,7 @@ class MyServer {
 private:
     httplib::Server server;
     std::string folderPath;
-    std::string crcFile;
+    std::string hashFile;
 
     bool is_valid_token(const std::string& token);
 
@@ -27,7 +27,7 @@ private:
     std::string get_file_bytes(const std::string& filepath) const;
 
 public:
-    MyServer(const std::string& _folderPath = "", const std::string& _crcFile = "");
+    MyServer(const std::string& _folderPath = "", const std::string& _hashFile = "");
 
     void handle_request(const httplib::Request& req, httplib::Response& res);
 

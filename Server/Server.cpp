@@ -55,7 +55,7 @@ json parse_query_string(const std::string& query) {
 
     return params;
 }
-MyServer::MyServer(const std::string& _folderPath, const std::string& _crcFile) : folderPath(_folderPath), crcFile(_crcFile) {}
+MyServer::MyServer(const std::string& _folderPath, const std::string& _hashFile) : folderPath(_folderPath), hashFile(_hashFile) {}
 
 bool MyServer::is_valid_token(const std::string& token) {
     static const std::vector<std::string> token_keys = {"aaa", "bbb"};
@@ -65,13 +65,13 @@ bool MyServer::is_valid_token(const std::string& token) {
 std::string MyServer::scan_folder() {
     json filedict;
     for (const auto& entry : fs::recursive_directory_iterator(folderPath)) {
-        if (entry.path().filename() == crcFile) {
+        if (entry.path().filename() == hashFile) {
             std::ifstream file(entry.path().string());
             if (file.is_open()) {
                 try {
-                    json crcs;
-                    file >> crcs;
-                    filedict.merge_patch(crcs);
+                    json hashs;
+                    file >> hashs;
+                    filedict.merge_patch(hashs);
                 } catch (const json::parse_error& e) {
                     std::cerr << "Error parsing JSON file: " << entry.path().string() << " - " << e.what() << std::endl;
                 }

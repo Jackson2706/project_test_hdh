@@ -8,9 +8,9 @@
 #include <chrono>
 #include "argparse/argparse.hpp"
 
-#include "Server/crcRoutine.h"
+#include "Server/hashRoutine.h"
 #include "Server/Server.h"
-#include "Client/crcRoutine.h"
+#include "Client/hashRoutine.h"
 #include "Client/Client.h"
 
 using namespace boost::asio;
@@ -31,20 +31,20 @@ const string CLIENT_CONFIG = WORKSPACE + "client_config.json";
 const string SYNC_CONFIG = WORKSPACE + "sync_config.json";
 
 // flag signal
-volatile bool crcSignal = false;
+volatile bool hashSignal = false;
 volatile bool clientSignal = false;
 volatile bool shouldTerminate = false;
 volatile bool serverOffline = false;
 
 // reset init
 void reset(){
-    crcSignal = false;
+    hashSignal = false;
     clientSignal = false;
     shouldTerminate = false;
     serverOffline = false;
 }
 
-// args for crc Thread/ client call thread
+// args for hash Thread/ client call thread
 struct ThreadArgs {
     string config;
 };
@@ -52,7 +52,7 @@ struct ThreadArgs {
 // args for server host thread
 struct ServerThreadArgs{
     string folderPath;
-    string crcFile;
+    string hashFile;
     int port;
 };
 
@@ -114,7 +114,7 @@ void show_server_config(const std::string config_json){
         cout << "Thong tin tu server config: "<<endl;
         cout << "\tfolderPath: "<< "\t" <<conf.at("folderPath")<<endl;
         cout << "\tport:       " << "\t" << conf.at("port") <<endl;
-        cout << "\t.crcFile:   "<< "\t" << conf.at("crcFile")<<endl;
+        cout << "\t.hashFile:   "<< "\t" << conf.at("hashFile")<<endl;
     } else {
         cout << "Canh bao: \t Duong dan khong ton tai !" << endl;
     }
@@ -133,7 +133,7 @@ void show_client_config(const std::string config_json){
         cout << "\tfolderPath: "<< "\t" <<conf.at("folderPath")<<endl;
         cout << "\tport:       " << "\t" << conf.at("port") <<endl;
         cout << "\tip:         "<< "\t" << conf.at("ip")<<endl;
-        cout << "\t.crcFile:   "<< "\t" << conf.at("crcFile")<<endl;
+        cout << "\t.hashFile:   "<< "\t" << conf.at("hashFile")<<endl;
         cout << "\tsubToSync:  "<< "\t" << conf.at("subToSync")<<endl;
     } else {
         cout << "Canh bao: \t Duong dan khong ton tai !" << endl;
@@ -154,7 +154,7 @@ void show_sync_config(const std::string config_json){
         cout << "\tport for calling: " << "\t" << conf.at("port") <<endl;
         cout << "\tport for hosting: " << "\t" << conf.at("port_host") <<endl;
         cout << "\tip:               "<< "\t" << conf.at("ip")<<endl;
-        cout << "\t.crcFile:         "<< "\t" << conf.at("crcFile")<<endl;
+        cout << "\t.hashFile:         "<< "\t" << conf.at("hashFile")<<endl;
         cout << "\tsubToSync:        "<< "\t" << conf.at("subToSync")<<endl;
     } else {
         cout << "Canh bao: \t Duong dan khong ton tai !" << endl;
@@ -206,26 +206,26 @@ bool openJsonFile(const std::string& filename, json& jsonData) {
 // Signal handler function
 void handleSignal(int signo) {
     if (signo == SIGUSR1) {
-        crcSignal = true;
+        hashSignal = true;
     } else if (signo == SIGUSR2){
         clientSignal = true;
     }
 }
 
 
-void* crcRoutineFunction(void* arg){
+void* hashRoutineFunction(void* arg){
     ThreadArgs* args = static_cast<ThreadArgs*>(arg);
     while (!shouldTerminate){
 
-        if(crcSignal){
-            cout << getCurrentTime() << "CrcRoutine running...." << endl;
-            CRCRoutine* crcRoutine = new CRCRoutine(); 
-            int crc_result = crcRoutine->crcRoutine(args->config);
-            delete crcRoutine;
-            crcSignal = false;
+        if(hashSignal){
+            cout << getCurrentTime() << "HashRoutine running...." << endl;
+            HashRoutine* _hashRoutine = new HashRoutine(); 
+            int hash_result = _hashRoutine->hashRoutine(args->config);
+            delete _hashRoutine;
+            hashSignal = false;
         }
     }
-    std::cout << getCurrentTime() << "crcThread terminating..." << std::endl;
+    std::cout << getCurrentTime() << "hashThread terminating..." << std::endl;
     pthread_exit(NULL);
 }
 
@@ -252,7 +252,7 @@ void* serverHostFunction(void *arg){
     while(!shouldTerminate){
         if(!serverOffline){
             try{
-                MyServer server(args->folderPath, args->crcFile);
+                MyServer server(args->folderPath, args->hashFile);
                 server.run_server(args->port);
             } catch (const std::exception& e){
                 std::cerr << e.what() << std::endl;
@@ -317,7 +317,7 @@ int main(int argc, char *argv[]) {
                     cout << "Tao file config cho Server(mode 1)" << endl;
                 }
                 string folderpath;
-                string crcFile;
+                string hashFile;
                 string port;
                 do{
                     cout << "\tfolderPath: \t";
@@ -332,11 +332,11 @@ int main(int argc, char *argv[]) {
                     else break;
                 }while(!port.empty());
                 do{
-                    cout << "\t.crcFile: \t";
-                    getline(std::cin, crcFile);
-                    if(!isValidPath(crcFile) && !crcFile.empty()) continue;
+                    cout << "\t.hashFile: \t";
+                    getline(std::cin, hashFile);
+                    if(!isValidPath(hashFile) && !hashFile.empty()) continue;
                     else break;
-                } while (!crcFile.empty());
+                } while (!hashFile.empty());
                 json existingJsonData;
                 if(openJsonFile(SERVER_CONFIG,existingJsonData)){
                     std::ifstream inputFile(SERVER_CONFIG);
@@ -344,7 +344,7 @@ int main(int argc, char *argv[]) {
                     inputFile.close();
                     if(!folderpath.empty()) existingJsonData.at("folderPath") = folderpath;
                     if(!port.empty()) existingJsonData.at("port") = stoi(port);
-                    if(!crcFile.empty()) existingJsonData.at("crcFile") = crcFile;
+                    if(!hashFile.empty()) existingJsonData.at("hashFile") = hashFile;
 
                     std::ofstream outputFile(SERVER_CONFIG);
                     outputFile << existingJsonData;
@@ -360,7 +360,7 @@ int main(int argc, char *argv[]) {
                         cout << "Error: Loi file config...2" << endl;
                         return 1;
                     }
-                    if(!crcFile.empty()) existingJsonData["crcFile"] = crcFile;
+                    if(!hashFile.empty()) existingJsonData["hashFile"] = hashFile;
                     else {
                         cout << "Error: Loi file config...3" << endl;
                         return 1;
@@ -383,7 +383,7 @@ int main(int argc, char *argv[]) {
                     cout << "Tao file config cho Client(mode 1)" << endl;
                 }
                 string folderpath;
-                string crcFile;
+                string hashFile;
                 string port;
                 string ip;
                 string subToSync;
@@ -406,11 +406,11 @@ int main(int argc, char *argv[]) {
                     else break;
                 }while(!ip.empty());
                 do{
-                    cout << "\t.crcFile: \t";
-                    getline(std::cin, crcFile);
-                    if(!isValidPath(crcFile) && !crcFile.empty()) continue;
+                    cout << "\t.hashFile: \t";
+                    getline(std::cin, hashFile);
+                    if(!isValidPath(hashFile) && !hashFile.empty()) continue;
                     else break;
-                } while (!crcFile.empty());
+                } while (!hashFile.empty());
                 do{
                     cout << "\tsubToSync: \t";
                     getline(std::cin, subToSync);
@@ -425,7 +425,7 @@ int main(int argc, char *argv[]) {
                     if(!folderpath.empty()) existingJsonData.at("folderPath") = folderpath;
                     if(!port.empty()) existingJsonData.at("port") = stoi(port);
                     if(!ip.empty()) existingJsonData.at("ip") = ip;
-                    if(!crcFile.empty()) existingJsonData.at("crcFile") = crcFile;
+                    if(!hashFile.empty()) existingJsonData.at("hashFile") = hashFile;
                     if(!subToSync.empty()) existingJsonData.at("subToSync") = subToSync;
                     std::ofstream outputFile(CLIENT_CONFIG);
                     outputFile << existingJsonData;
@@ -447,7 +447,7 @@ int main(int argc, char *argv[]) {
                         cout << "Error: Loi file config...3" << endl;
                         return 1;
                     }
-                    if(!crcFile.empty()) existingJsonData["crcFile"] = crcFile;
+                    if(!hashFile.empty()) existingJsonData["hashFile"] = hashFile;
                     else {
                         cout << "Error: Loi file config...4" << endl;
                         return 1;
@@ -476,7 +476,7 @@ int main(int argc, char *argv[]) {
                 cout << "Tao file config cho mode 2" << endl;
             }
             string folderpath;
-            string crcFile;
+            string hashFile;
             string port;
             string port_host;
             string ip;
@@ -506,11 +506,11 @@ int main(int argc, char *argv[]) {
                 else break;
             }while(!ip.empty());
             do{
-                cout << "\t.crcFile: \t";
-                getline(std::cin, crcFile);
-                if(!isValidPath(crcFile) && !crcFile.empty()) continue;
+                cout << "\t.hashFile: \t";
+                getline(std::cin, hashFile);
+                if(!isValidPath(hashFile) && !hashFile.empty()) continue;
                 else break;
-            } while (!crcFile.empty());
+            } while (!hashFile.empty());
             do{
                 cout << "\tsubToSync: \t";
                 getline(std::cin, subToSync);
@@ -526,7 +526,7 @@ int main(int argc, char *argv[]) {
                 if(!port.empty()) existingJsonData.at("port") = stoi(port);
                 if(!port_host.empty()) existingJsonData.at("port_host") = stoi(port_host);
                 if(!ip.empty()) existingJsonData.at("ip") = ip;
-                if(!crcFile.empty()) existingJsonData.at("crcFile") = crcFile;
+                if(!hashFile.empty()) existingJsonData.at("hashFile") = hashFile;
                 if(!subToSync.empty()) existingJsonData.at("subToSync") = subToSync;
                 std::ofstream outputFile(SYNC_CONFIG);
                 outputFile << existingJsonData;
@@ -553,7 +553,7 @@ int main(int argc, char *argv[]) {
                     cout << "Error: Loi file config...3" << endl;
                     return 1;
                 }
-                if(!crcFile.empty()) existingJsonData["crcFile"] = crcFile;
+                if(!hashFile.empty()) existingJsonData["hashFile"] = hashFile;
                 else {
                     cout << "Error: Loi file config...4" << endl;
                     return 1;
@@ -579,10 +579,10 @@ int main(int argc, char *argv[]) {
         }
         ThreadArgs* args = new ThreadArgs;
         args->config = SERVER_CONFIG;
-        pthread_t crcThread;
-        // Tao crc thread
-        if(pthread_create(&crcThread, NULL, crcRoutineFunction, args) != 0){
-            std::cerr <<"Failed to create crcThread" << std::endl;
+        pthread_t hashThread;
+        // Tao hash thread
+        if(pthread_create(&hashThread, NULL, hashRoutineFunction, args) != 0){
+            std::cerr <<"Failed to create hashThread" << std::endl;
         }
         // Contruct server
         json conf;
@@ -590,11 +590,11 @@ int main(int argc, char *argv[]) {
         inputFile >> conf;
         inputFile.close();
         string folderPath = conf.at("folderPath");
-        string crcFile = conf.at("crcFile");
+        string hashFile = conf.at("hashFile");
         int port = conf.at("port");
         ServerThreadArgs* server_args = new ServerThreadArgs;
         server_args->folderPath = folderPath;
-        server_args->crcFile = crcFile;
+        server_args->hashFile = hashFile;
         server_args->port = port;
         
         pthread_t serverHostThread;
@@ -603,7 +603,7 @@ int main(int argc, char *argv[]) {
             std::cerr << "Failed to create server host thread" << std::endl;
         }
 
-        pthread_detach(crcThread);
+        pthread_detach(hashThread);
         pthread_detach(serverHostThread);
 
         while (true){
@@ -613,7 +613,7 @@ int main(int argc, char *argv[]) {
             cin >> userInput;
 
             if (userInput == 'U'){
-                pthread_kill(crcThread, SIGUSR1);
+                pthread_kill(hashThread, SIGUSR1);
             }
             if (userInput == 'Q'){
                 serverOffline = true;
@@ -632,9 +632,9 @@ int main(int argc, char *argv[]) {
             cout << "File config khong ton tai" << endl;
             return 1;
         }
-        CRCRoutine* crcRoutine = new CRCRoutine(); 
-        int crc_result = crcRoutine->crcRoutine(CLIENT_CONFIG);
-        delete crcRoutine;
+        HashRoutine* _hashRoutine = new HashRoutine(); 
+        int hash_result = _hashRoutine->hashRoutine(CLIENT_CONFIG);
+        delete _hashRoutine;
         cout << getCurrentTime() << "Dong bo du lieu: ";
         try{
             Client client(CLIENT_CONFIG);
@@ -644,16 +644,16 @@ int main(int argc, char *argv[]) {
         }
         cout << getCurrentTime() << "Phien lam viec ket thuc" << endl;
     } else {
-        // crc function
+        // hash function
         if(!isPathExists(SYNC_CONFIG)){
             cout << "file config khong ton tai" << endl;
             return 1;
         }
         ThreadArgs* args = new ThreadArgs;
         args->config = SYNC_CONFIG;
-        pthread_t crcThread;
-        if(pthread_create(&crcThread, NULL, crcRoutineFunction,args)!=0){
-            std::cerr <<"Failed to create crcThread" << std::endl;
+        pthread_t hashThread;
+        if(pthread_create(&hashThread, NULL, hashRoutineFunction,args)!=0){
+            std::cerr <<"Failed to create hashThread" << std::endl;
         }
 
         // call sync 
@@ -667,18 +667,18 @@ int main(int argc, char *argv[]) {
         inputFile >> conf;
         inputFile.close();
         string folderPath = conf.at("folderPath");
-        string crcFile_ = conf.at("crcFile");
+        string hashFile_ = conf.at("hashFile");
         int port_ = conf.at("port_host");
         ServerThreadArgs *host_args = new ServerThreadArgs;
         host_args->folderPath = folderPath;
-        host_args->crcFile = crcFile_;
+        host_args->hashFile = hashFile_;
         host_args->port = port_;
         pthread_t hostThread;
         if (pthread_create(&hostThread, NULL, serverHostFunction, host_args) != 0){
             std::cerr << "Failed to create host thread" << std::endl;
         }
         pthread_detach(callThread);
-        pthread_detach(crcThread);
+        pthread_detach(hashThread);
         pthread_detach(hostThread);
         while (true) {
             char userInput;
@@ -687,8 +687,8 @@ int main(int argc, char *argv[]) {
             cin >> userInput;
 
             if (userInput == 'U') {
-                // Send signal to crcThread
-                pthread_kill(crcThread, SIGUSR1);
+                // Send signal to hashThread
+                pthread_kill(hashThread, SIGUSR1);
             }
 
             if (userInput == 'S') {
