@@ -90,7 +90,6 @@ void Client::synchronizeData() {
             serverHashsFilteredKeys.push_back(key);
         }
     }
-    std::cout << "Pass 1" << std::endl;
     int i = 0;
     std::string absPath;
     std::string data;
