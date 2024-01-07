@@ -37,15 +37,25 @@ json Client::scanFolder() {
 }
 
 json Client::dictReduce(json& masterJson, json& minorJson) {
-    for (json::iterator it = masterJson.begin(); it != masterJson.end(); ++it) {
+    for (json::iterator it = masterJson.begin(); it != masterJson.end(); ) {
         std::string key = it.key();
         std::string value = it.value();
         try {
+            std::cout << minorJson.at(key) << "\t" << value << std::endl;
             if (minorJson.at(key) == value) {
+                // Lưu trữ vị trí phần tử tiếp theo trước khi xóa
+                json::iterator next_it = it;
+                ++next_it;
+                // Xóa phần tử hiện tại
                 it = masterJson.erase(it);
+                // Cập nhật iterator cho lần lặp tiếp theo
+                it = next_it;
+            } else {
+                ++it;
             }
         } catch (const std::exception& e) {
             // std::cerr << "Caught exception: " << e.what() << std::endl;
+            ++it;
         }
     }
     return masterJson;
