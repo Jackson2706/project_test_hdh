@@ -41,7 +41,6 @@ json Client::dictReduce(json& masterJson, json& minorJson) {
         std::string key = it.key();
         std::string value = it.value();
         try {
-            std::cout << minorJson.at(key) << "\t" << value << std::endl;
             if (minorJson.at(key) == value) {
                 // Lưu trữ vị trí phần tử tiếp theo trước khi xóa
                 json::iterator next_it = it;
@@ -89,7 +88,6 @@ void Client::synchronizeData() {
     json serverHashs = downloadHASHS();
     json clientHashs = scanFolder();
     serverHashs = dictReduce(serverHashs, clientHashs);
-    std::cout << serverHashs << std::endl;
     if (serverHashs.empty())
         return;
     std::vector<std::string> serverHashsFilteredKeys;
