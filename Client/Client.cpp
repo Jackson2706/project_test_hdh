@@ -79,7 +79,9 @@ void Client::synchronizeData() {
     json serverHashs = downloadHASHS();
     json clientHashs = scanFolder();
     serverHashs = dictReduce(serverHashs, clientHashs);
-
+    std::cout << serverHashs << std::endl;
+    if (serverHashs.empty())
+        return;
     std::vector<std::string> serverHashsFilteredKeys;
 
     for (const auto& entry : serverHashs.items()) {
